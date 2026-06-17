@@ -26,7 +26,7 @@ A aplicação é composta por:
 | A01 | Controle de Acesso Quebrado | ✅ Resolvido |
 | A02 | Falhas Criptográficas | ⚠️ Parcialmente Resolvido |
 | A03 | Injeção | ✅ Resolvido |
-| A04 | Design Inseguro | ⚠️ Parcialmente Resolvido |
+| A04 | Design Inseguro | ✅ Resolvido |
 | A05 | Configuração de Segurança Incorreta | ⚠️ Parcialmente Resolvido |
 | A06 | Componentes Vulneráveis e Desatualizados | ℹ️ Não Avaliado |
 | A07 | Falhas de Identificação e Autenticação | ✅ Resolvido |
@@ -212,19 +212,19 @@ options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
 
 **Isolamento de dados por usuário** (ver A01).
 
-#### ⚠️ Ponto de atenção
-
-**Política de senha abaixo do recomendado OWASP:**
+**Política de senha alinhada ao OWASP:**
 ```csharp
-options.Password.RequireUppercase = false;         // OWASP recomenda maiúscula
-options.Password.RequireNonAlphanumeric = false;   // OWASP recomenda caractere especial
-options.Password.RequiredLength = 6;               // OWASP recomenda mínimo 8
+options.Password.RequiredLength = 8;               // mínimo 8 caracteres
+options.Password.RequireDigit = true;              // ao menos 1 número
+options.Password.RequireLowercase = true;          // ao menos 1 minúscula
+options.Password.RequireUppercase = true;          // ao menos 1 maiúscula
+options.Password.RequireNonAlphanumeric = true;    // ao menos 1 caractere especial
 ```
 
-A política atual aceita senhas simples como `abc123`. Recomenda-se aumentar o mínimo para 8 caracteres e exigir ao menos 1 caractere especial.
+Validação espelhada no frontend (RegistroScreen) com mensagem clara ao usuário e regex de verificação antes do envio.
 
 ### Resultado
-Principais controles de design implementados (rate limiting, lockout, isolamento). Política de senha precisa ser fortalecida.
+Todos os controles de design implementados: rate limiting, lockout, isolamento de dados e política de senha forte (mín. 8 chars, dígito, maiúscula, especial).
 
 ---
 
@@ -446,7 +446,7 @@ Risco de SSRF não aplicável à arquitetura atual do projeto.
 |------|-----------|-----------|
 | A02 | Rotacionar JWT Secret exposto no histórico do Git | 🔴 Alta |
 | A02 | Aplicar hash nos Refresh Tokens antes de salvar no banco | 🟡 Média |
-| A04 | Aumentar requisitos de senha (mínimo 8 chars, 1 especial) | 🟡 Média |
+| A04 | ~~Aumentar requisitos de senha~~ — **Resolvido** | ✅ |
 | A05 | Mover `appsettings.Development.json` para `dotnet user-secrets` | 🟡 Média |
 | A05 | Restringir CORS ao domínio específico em staging/produção | 🟡 Média |
 | A06 | Executar `dotnet list package --vulnerable` e `npm audit` | 🟢 Baixa |

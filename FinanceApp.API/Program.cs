@@ -24,11 +24,11 @@ builder.Services.AddDbContext<FinanceDbContext>((sp, options) =>
 // ===== IDENTITY =====
 builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options =>
 {
-    options.Password.RequiredLength = 6;
+    options.Password.RequiredLength = 8;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
 
     options.User.RequireUniqueEmail = true;
 

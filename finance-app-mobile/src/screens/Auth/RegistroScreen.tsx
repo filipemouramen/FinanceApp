@@ -64,8 +64,8 @@ export default function RegistroScreen({ navigation }: any) {
       return;
     }
 
-    if (senha.length < 6) {
-      Alert.alert('Atenção', 'A senha deve ter no mínimo 6 caracteres.');
+    if (senha.length < 8 || !/[A-Z]/.test(senha) || !/[^A-Za-z0-9]/.test(senha)) {
+      Alert.alert('Atenção', 'A senha deve ter no mínimo 8 caracteres, uma letra maiúscula e um caractere especial.');
       return;
     }
 
@@ -151,7 +151,7 @@ export default function RegistroScreen({ navigation }: any) {
             <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} style={styles.inputIcone} />
             <TextInput
               style={styles.inputComIcone}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mín. 8 chars, 1 maiúscula, 1 especial"
               placeholderTextColor={colors.textMuted}
               secureTextEntry={!mostrarSenha}
               value={senha}
