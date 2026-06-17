@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FinanceApp.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Inicial : Migration
+    public partial class v2_IntIds_SoftDelete : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,12 +36,14 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     Acao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     TipoEntidade = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     EntidadeId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ValorAnterior = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ValorNovo = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Detalhes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EnderecoIP = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
                     Navegador = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
@@ -57,7 +59,8 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -72,7 +75,8 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     NomeCompleto = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     TelefoneWhatsApp = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     FotoUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
@@ -106,7 +110,7 @@ namespace FinanceApp.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RoleId = table.Column<int>(type: "int", nullable: false),
                     ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
@@ -134,7 +138,7 @@ namespace FinanceApp.Infrastructure.Migrations
                     Cor = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: false),
                     Tipo = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Padrao = table.Column<bool>(type: "bit", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UsuarioId = table.Column<int>(type: "int", nullable: true),
                     Ativo = table.Column<bool>(type: "bit", nullable: false),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -155,10 +159,12 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     Codigo = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Finalidade = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Tentativas = table.Column<int>(type: "int", nullable: false),
                     ExpiraEm = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UsadoEm = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -180,7 +186,7 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     Moeda = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
                     DiaInicioMes = table.Column<int>(type: "int", nullable: false),
                     WhatsAppAtivado = table.Column<bool>(type: "bit", nullable: false),
@@ -208,8 +214,9 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     Nome = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     TipoConta = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Banco = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: true),
@@ -219,6 +226,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     SaldoAtual = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Ativo = table.Column<bool>(type: "bit", nullable: false),
                     Principal = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AtualizadoEm = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -239,8 +248,9 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     Titulo = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     ValorAlvo = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ValorAtual = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -249,6 +259,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     Cor = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
                     Concluida = table.Column<bool>(type: "bit", nullable: false),
                     ConcluidaEm = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AtualizadoEm = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -269,13 +281,14 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     Titulo = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Mensagem = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Tipo = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     Lida = table.Column<bool>(type: "bit", nullable: false),
-                    EntidadeRelacionadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    EntidadeRelacionadaId = table.Column<int>(type: "int", nullable: true),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -295,8 +308,9 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     Token = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
                     ExpiraEm = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -322,7 +336,7 @@ namespace FinanceApp.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false),
                     ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
@@ -346,7 +360,7 @@ namespace FinanceApp.Infrastructure.Migrations
                     LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    UserId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -365,8 +379,8 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    RoleId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -392,7 +406,7 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false),
                     LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -418,7 +432,7 @@ namespace FinanceApp.Infrastructure.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CategoriaId = table.Column<int>(type: "int", nullable: false),
                     Apelido = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    UsuarioId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -443,8 +457,9 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     CategoriaId = table.Column<int>(type: "int", nullable: false),
                     ValorLimite = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Mes = table.Column<int>(type: "int", nullable: false),
@@ -475,18 +490,21 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ContaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
+                    ContaId = table.Column<int>(type: "int", nullable: true),
                     Nome = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Bandeira = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
                     UltimosDigitos = table.Column<string>(type: "nvarchar(4)", maxLength: 4, nullable: true),
-                    Limite = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    LimiteTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LimiteDisponivel = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiaFechamento = table.Column<int>(type: "int", nullable: false),
                     DiaVencimento = table.Column<int>(type: "int", nullable: false),
                     Cor = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: false),
                     Ativo = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AtualizadoEm = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -513,10 +531,11 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     CategoriaId = table.Column<int>(type: "int", nullable: false),
-                    ContaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ContaId = table.Column<int>(type: "int", nullable: true),
                     FormaPagamentoId = table.Column<int>(type: "int", nullable: true),
                     Valor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Tipo = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
@@ -564,10 +583,11 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ContaOrigemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ContaDestinoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
+                    ContaOrigemId = table.Column<int>(type: "int", nullable: false),
+                    ContaDestinoId = table.Column<int>(type: "int", nullable: false),
                     Valor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
                     DataTransferencia = table.Column<DateOnly>(type: "date", nullable: false),
@@ -602,8 +622,9 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MetaEconomiaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MetaEconomiaId = table.Column<int>(type: "int", nullable: false),
                     Valor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Observacoes = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -625,13 +646,15 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CartaoCreditoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CartaoCreditoId = table.Column<int>(type: "int", nullable: false),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     MesReferencia = table.Column<int>(type: "int", nullable: false),
                     AnoReferencia = table.Column<int>(type: "int", nullable: false),
                     DataFechamento = table.Column<DateOnly>(type: "date", nullable: false),
                     DataVencimento = table.Column<DateOnly>(type: "date", nullable: false),
+                    DataPagamento = table.Column<DateOnly>(type: "date", nullable: true),
                     ValorTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ValorPago = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
@@ -661,9 +684,10 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CartaoCreditoId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
+                    CartaoCreditoId = table.Column<int>(type: "int", nullable: true),
                     CategoriaId = table.Column<int>(type: "int", nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
                     ValorTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -703,13 +727,17 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     CategoriaId = table.Column<int>(type: "int", nullable: false),
-                    ContaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ContaId = table.Column<int>(type: "int", nullable: true),
                     FormaPagamentoId = table.Column<int>(type: "int", nullable: true),
-                    CartaoCreditoId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    FaturaCartaoId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CartaoCreditoId = table.Column<int>(type: "int", nullable: true),
+                    FaturaCartaoId = table.Column<int>(type: "int", nullable: true),
+                    TransferenciaContaId = table.Column<int>(type: "int", nullable: true),
+                    RegraRecorrenciaId = table.Column<int>(type: "int", nullable: true),
+                    ParcelamentoId = table.Column<int>(type: "int", nullable: true),
                     Valor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Tipo = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
@@ -718,8 +746,6 @@ namespace FinanceApp.Infrastructure.Migrations
                     Status = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
                     Observacoes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Recorrente = table.Column<bool>(type: "bit", nullable: false),
-                    RegraRecorrenciaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ParcelamentoId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     NumeroParcela = table.Column<int>(type: "int", nullable: true),
                     TotalParcelas = table.Column<int>(type: "int", nullable: true),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -771,6 +797,12 @@ namespace FinanceApp.Infrastructure.Migrations
                         principalTable: "RegrasRecorrencia",
                         principalColumn: "Id");
                     table.ForeignKey(
+                        name: "FK_Transacoes_TransferenciasContas_TransferenciaContaId",
+                        column: x => x.TransferenciaContaId,
+                        principalSchema: "FinanceApp",
+                        principalTable: "TransferenciasContas",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Transacoes_Usuarios_UsuarioId",
                         column: x => x.UsuarioId,
                         principalSchema: "FinanceApp",
@@ -784,9 +816,10 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TransacaoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TransacaoId = table.Column<int>(type: "int", nullable: false),
+                    UsuarioId = table.Column<int>(type: "int", nullable: false),
                     NomeArquivo = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     UrlArquivo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     TipoArquivo = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
@@ -816,14 +849,15 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UsuarioId = table.Column<int>(type: "int", nullable: true),
                     NumeroTelefone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     MensagemOriginal = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     CategoriaIdentificada = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: true),
                     ValorIdentificado = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     ProcessadoComSucesso = table.Column<bool>(type: "bit", nullable: false),
-                    TransacaoId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    TransacaoId = table.Column<int>(type: "int", nullable: true),
                     MensagemErro = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ProcessadoEm = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -851,25 +885,25 @@ namespace FinanceApp.Infrastructure.Migrations
                 columns: new[] { "Id", "Ativo", "Cor", "CriadoEm", "Icone", "Nome", "Padrao", "Tipo", "UsuarioId" },
                 values: new object[,]
                 {
-                    { 1, true, "#FF6B6B", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1082), "utensils", "Alimentacao", true, "DESPESA", null },
-                    { 2, true, "#4ECDC4", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1097), "car", "Transporte", true, "DESPESA", null },
-                    { 3, true, "#45B7D1", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1102), "home", "Moradia", true, "DESPESA", null },
-                    { 4, true, "#96CEB4", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1108), "heart-pulse", "Saude", true, "DESPESA", null },
-                    { 5, true, "#FFEAA7", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1112), "graduation-cap", "Educacao", true, "DESPESA", null },
-                    { 6, true, "#DDA0DD", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1115), "gamepad-2", "Lazer", true, "DESPESA", null },
-                    { 7, true, "#F0E68C", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1119), "shirt", "Vestuario", true, "DESPESA", null },
-                    { 8, true, "#FFB347", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1123), "fuel", "Combustivel", true, "DESPESA", null },
-                    { 9, true, "#87CEEB", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1127), "repeat", "Assinaturas", true, "DESPESA", null },
-                    { 10, true, "#98D8C8", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1130), "shopping-cart", "Mercado", true, "DESPESA", null },
-                    { 11, true, "#C9B1FF", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1132), "paw-print", "Pets", true, "DESPESA", null },
-                    { 12, true, "#FFB6C1", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1135), "sparkles", "Beleza", true, "DESPESA", null },
-                    { 13, true, "#FF4757", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1138), "credit-card", "Cartao de Credito", true, "DESPESA", null },
-                    { 14, true, "#E17055", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1142), "trending-down", "Investimentos", true, "DESPESA", null },
-                    { 15, true, "#B0BEC5", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1145), "ellipsis", "Outros", true, "DESPESA", null },
-                    { 16, true, "#27AE60", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1152), "banknote", "Salario", true, "RECEITA", null },
-                    { 17, true, "#2ECC71", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1155), "laptop", "Freelance", true, "RECEITA", null },
-                    { 18, true, "#1ABC9C", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1159), "trending-up", "Rendimentos", true, "RECEITA", null },
-                    { 19, true, "#3498DB", new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1162), "plus-circle", "Outros Ganhos", true, "RECEITA", null }
+                    { 1, true, "#FF6B6B", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7067), "utensils", "Alimentacao", true, "DESPESA", null },
+                    { 2, true, "#4ECDC4", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7195), "car", "Transporte", true, "DESPESA", null },
+                    { 3, true, "#45B7D1", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7200), "home", "Moradia", true, "DESPESA", null },
+                    { 4, true, "#96CEB4", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7204), "heart-pulse", "Saude", true, "DESPESA", null },
+                    { 5, true, "#FFEAA7", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7208), "graduation-cap", "Educacao", true, "DESPESA", null },
+                    { 6, true, "#DDA0DD", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7212), "gamepad-2", "Lazer", true, "DESPESA", null },
+                    { 7, true, "#F0E68C", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7215), "shirt", "Vestuario", true, "DESPESA", null },
+                    { 8, true, "#FFB347", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7218), "fuel", "Combustivel", true, "DESPESA", null },
+                    { 9, true, "#87CEEB", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7222), "repeat", "Assinaturas", true, "DESPESA", null },
+                    { 10, true, "#98D8C8", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7226), "shopping-cart", "Mercado", true, "DESPESA", null },
+                    { 11, true, "#C9B1FF", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7229), "paw-print", "Pets", true, "DESPESA", null },
+                    { 12, true, "#FFB6C1", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7232), "sparkles", "Beleza", true, "DESPESA", null },
+                    { 13, true, "#FF4757", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7236), "credit-card", "Cartao de Credito", true, "DESPESA", null },
+                    { 14, true, "#E17055", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7240), "trending-down", "Investimentos", true, "DESPESA", null },
+                    { 15, true, "#B0BEC5", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7243), "ellipsis", "Outros", true, "DESPESA", null },
+                    { 16, true, "#27AE60", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7252), "banknote", "Salario", true, "RECEITA", null },
+                    { 17, true, "#2ECC71", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7257), "laptop", "Freelance", true, "RECEITA", null },
+                    { 18, true, "#1ABC9C", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7260), "trending-up", "Rendimentos", true, "RECEITA", null },
+                    { 19, true, "#3498DB", new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7263), "plus-circle", "Outros Ganhos", true, "RECEITA", null }
                 });
 
             migrationBuilder.InsertData(
@@ -1215,6 +1249,12 @@ namespace FinanceApp.Infrastructure.Migrations
                 column: "RegraRecorrenciaId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Transacoes_TransferenciaContaId",
+                schema: "FinanceApp",
+                table: "Transacoes",
+                column: "TransferenciaContaId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Transacoes_UsuarioId",
                 schema: "FinanceApp",
                 table: "Transacoes",
@@ -1346,10 +1386,6 @@ namespace FinanceApp.Infrastructure.Migrations
                 schema: "FinanceApp");
 
             migrationBuilder.DropTable(
-                name: "TransferenciasContas",
-                schema: "FinanceApp");
-
-            migrationBuilder.DropTable(
                 name: "UsuarioClaims",
                 schema: "FinanceApp");
 
@@ -1387,6 +1423,10 @@ namespace FinanceApp.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "RegrasRecorrencia",
+                schema: "FinanceApp");
+
+            migrationBuilder.DropTable(
+                name: "TransferenciasContas",
                 schema: "FinanceApp");
 
             migrationBuilder.DropTable(

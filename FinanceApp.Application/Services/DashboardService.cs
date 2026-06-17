@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FinanceApp.Application.DTOs.Dashboard;
 using FinanceApp.Application.Interfaces;
 using FinanceApp.Domain.Enums;
@@ -20,7 +15,7 @@ public class DashboardService : IDashboardService
         _context = context;
     }
 
-    public async Task<Resultado<DashboardResponse>> ObterAsync(Guid usuarioId, int mes, int ano)
+    public async Task<Resultado<DashboardResponse>> ObterAsync(int usuarioId, int mes, int ano)
     {
         var dashboard = new DashboardResponse
         {
@@ -37,13 +32,12 @@ public class DashboardService : IDashboardService
         return Resultado<DashboardResponse>.Ok(dashboard);
     }
 
-    // RESUMO FINANCEIRO DO MÊS
-
-    private async Task<ResumoFinanceiroResponse> ObterResumoAsync(Guid usuarioId, int mes, int ano)
+    private async Task<ResumoFinanceiroResponse> ObterResumoAsync(int usuarioId, int mes, int ano)
     {
         var transacoesMes = _context.Transacoes
             .Where(t => t.UsuarioId == usuarioId
                      && t.Status == StatusTransacao.EFETIVADA
+                     && t.TransferenciaContaId == null
                      && t.DataTransacao.Month == mes
                      && t.DataTransacao.Year == ano);
 
@@ -56,6 +50,12 @@ public class DashboardService : IDashboardService
             .SumAsync(t => (decimal?)t.Valor) ?? 0;
 
         var totalTransacoes = await transacoesMes.CountAsync();
+
+        var totalTransferencias = await _context.TransferenciasContas
+            .Where(tc => tc.UsuarioId == usuarioId
+                      && tc.DataTransferencia.Month == mes
+                      && tc.DataTransferencia.Year == ano)
+            .SumAsync(tc => (decimal?)tc.Valor) ?? 0;
 
         var maiorDespesa = await transacoesMes
             .Where(t => t.Tipo == TipoTransacao.DESPESA)
@@ -83,6 +83,7 @@ public class DashboardService : IDashboardService
         {
             TotalReceitas = totalReceitas,
             TotalDespesas = totalDespesas,
+            TotalTransferencias = totalTransferencias,
             SaldoTotalContas = saldoTotalContas,
             TotalTransacoesMes = totalTransacoes,
             MediaDiariaDespesas = mediaDiaria,
@@ -91,15 +92,14 @@ public class DashboardService : IDashboardService
         };
     }
 
-    // GASTOS POR CATEGORIA (gráfico pizza)
-
-    private async Task<List<GastoPorCategoriaResponse>> ObterGastosPorCategoriaAsync(Guid usuarioId, int mes, int ano)
+    private async Task<List<GastoPorCategoriaResponse>> ObterGastosPorCategoriaAsync(int usuarioId, int mes, int ano)
     {
         var gastos = await _context.Transacoes
             .Include(t => t.Categoria)
             .Where(t => t.UsuarioId == usuarioId
                      && t.Tipo == TipoTransacao.DESPESA
                      && t.Status == StatusTransacao.EFETIVADA
+                     && t.TransferenciaContaId == null
                      && t.DataTransacao.Month == mes
                      && t.DataTransacao.Year == ano)
             .GroupBy(t => new
@@ -132,9 +132,7 @@ public class DashboardService : IDashboardService
         return gastos;
     }
 
-    // BALANÇO ÚLTIMOS 6 MESES (gráfico barras)
-
-    private async Task<List<BalancoMensalResponse>> ObterBalancoMensalAsync(Guid usuarioId, int mes, int ano)
+    private async Task<List<BalancoMensalResponse>> ObterBalancoMensalAsync(int usuarioId, int mes, int ano)
     {
         var dataFim = new DateOnly(ano, mes, DateTime.DaysInMonth(ano, mes));
         var dataInicio = dataFim.AddMonths(-5);
@@ -146,6 +144,7 @@ public class DashboardService : IDashboardService
         var transacoes = await _context.Transacoes
             .Where(t => t.UsuarioId == usuarioId
                      && t.Status == StatusTransacao.EFETIVADA
+                     && t.TransferenciaContaId == null
                      && t.DataTransacao >= dataInicio
                      && t.DataTransacao <= dataFim)
             .GroupBy(t => new { Ano = t.DataTransacao.Year, Mes = t.DataTransacao.Month })
@@ -160,7 +159,6 @@ public class DashboardService : IDashboardService
             .ThenBy(b => b.Mes)
             .ToListAsync();
 
-        // Preencher meses sem movimentação
         var resultado = new List<BalancoMensalResponse>();
         var dataAtual = dataInicio;
 
@@ -186,13 +184,13 @@ public class DashboardService : IDashboardService
         return resultado;
     }
 
-    // ÚLTIMAS TRANSAÇÕES
-
-    private async Task<List<TransacaoRecenteResponse>> ObterUltimasTransacoesAsync(Guid usuarioId)
+    private async Task<List<TransacaoRecenteResponse>> ObterUltimasTransacoesAsync(int usuarioId)
     {
         return await _context.Transacoes
             .Include(t => t.Categoria)
-            .Where(t => t.UsuarioId == usuarioId && t.Status == StatusTransacao.EFETIVADA)
+            .Where(t => t.UsuarioId == usuarioId
+                     && t.Status == StatusTransacao.EFETIVADA
+                     && t.TransferenciaContaId == null)
             .OrderByDescending(t => t.DataTransacao)
             .ThenByDescending(t => t.CriadoEm)
             .Take(15)
@@ -205,15 +203,14 @@ public class DashboardService : IDashboardService
                 CorCategoria = t.Categoria.Cor,
                 Valor = t.Valor,
                 Tipo = t.Tipo.ToString(),
+                Status = t.Status.ToString(),
                 Origem = t.Origem.ToString(),
                 DataTransacao = t.DataTransacao
             })
             .ToListAsync();
     }
 
-    // ORÇAMENTOS DO MÊS
-
-    private async Task<List<OrcamentoResumoResponse>> ObterOrcamentosAsync(Guid usuarioId, int mes, int ano)
+    private async Task<List<OrcamentoResumoResponse>> ObterOrcamentosAsync(int usuarioId, int mes, int ano)
     {
         var orcamentos = await _context.Orcamentos
             .Include(o => o.Categoria)
@@ -235,6 +232,7 @@ public class DashboardService : IDashboardService
 
             resultado.Add(new OrcamentoResumoResponse
             {
+                Id = orc.Id,
                 NomeCategoria = orc.Categoria.Nome,
                 IconeCategoria = orc.Categoria.Icone,
                 CorCategoria = orc.Categoria.Cor,
@@ -249,9 +247,7 @@ public class DashboardService : IDashboardService
             .ToList();
     }
 
-    // METAS ATIVAS
-
-    private async Task<List<MetaResumoResponse>> ObterMetasAsync(Guid usuarioId)
+    private async Task<List<MetaResumoResponse>> ObterMetasAsync(int usuarioId)
     {
         return await _context.MetasEconomia
             .Where(m => m.UsuarioId == usuarioId && !m.Concluida)
@@ -269,9 +265,7 @@ public class DashboardService : IDashboardService
             .ToListAsync();
     }
 
-    // PRÓXIMAS FATURAS A VENCER
-
-    private async Task<List<FaturaResumoResponse>> ObterProximasFaturasAsync(Guid usuarioId)
+    private async Task<List<FaturaResumoResponse>> ObterProximasFaturasAsync(int usuarioId)
     {
         var hoje = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -295,9 +289,7 @@ public class DashboardService : IDashboardService
             .ToListAsync();
     }
 
-    // SALDO DAS CONTAS
-
-    private async Task<List<ContaSaldoResponse>> ObterContasAsync(Guid usuarioId)
+    private async Task<List<ContaSaldoResponse>> ObterContasAsync(int usuarioId)
     {
         return await _context.Contas
             .Where(c => c.UsuarioId == usuarioId && c.Ativo)

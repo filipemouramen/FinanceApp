@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FinanceApp.Infrastructure.Migrations
 {
     [DbContext(typeof(FinanceDbContext))]
-    [Migration("20260419175534_Inicial")]
-    partial class Inicial
+    [Migration("20260614022512_v2_IntIds_SoftDelete")]
+    partial class v2_IntIds_SoftDelete
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,9 +27,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.Anexo", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
@@ -47,16 +49,16 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid>("TransacaoId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("TransacaoId")
+                        .HasColumnType("int");
 
                     b.Property<string>("UrlArquivo")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -83,8 +85,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<int>("CategoriaId")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -571,9 +573,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.CartaoCredito", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
@@ -585,8 +589,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
-                    b.Property<Guid?>("ContaId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("ContaId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Cor")
                         .IsRequired()
@@ -596,16 +600,22 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("DiaFechamento")
                         .HasColumnType("int");
 
                     b.Property<int>("DiaVencimento")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Limite")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<decimal>("LimiteDisponivel")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("LimiteTotal")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Nome")
@@ -617,8 +627,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(4)
                         .HasColumnType("nvarchar(4)");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -666,8 +676,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<Guid?>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -681,7 +691,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 1,
                             Ativo = true,
                             Cor = "#FF6B6B",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1082),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7067),
                             Icone = "utensils",
                             Nome = "Alimentacao",
                             Padrao = true,
@@ -692,7 +702,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 2,
                             Ativo = true,
                             Cor = "#4ECDC4",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1097),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7195),
                             Icone = "car",
                             Nome = "Transporte",
                             Padrao = true,
@@ -703,7 +713,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 3,
                             Ativo = true,
                             Cor = "#45B7D1",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1102),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7200),
                             Icone = "home",
                             Nome = "Moradia",
                             Padrao = true,
@@ -714,7 +724,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 4,
                             Ativo = true,
                             Cor = "#96CEB4",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1108),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7204),
                             Icone = "heart-pulse",
                             Nome = "Saude",
                             Padrao = true,
@@ -725,7 +735,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 5,
                             Ativo = true,
                             Cor = "#FFEAA7",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1112),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7208),
                             Icone = "graduation-cap",
                             Nome = "Educacao",
                             Padrao = true,
@@ -736,7 +746,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 6,
                             Ativo = true,
                             Cor = "#DDA0DD",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1115),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7212),
                             Icone = "gamepad-2",
                             Nome = "Lazer",
                             Padrao = true,
@@ -747,7 +757,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 7,
                             Ativo = true,
                             Cor = "#F0E68C",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1119),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7215),
                             Icone = "shirt",
                             Nome = "Vestuario",
                             Padrao = true,
@@ -758,7 +768,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 8,
                             Ativo = true,
                             Cor = "#FFB347",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1123),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7218),
                             Icone = "fuel",
                             Nome = "Combustivel",
                             Padrao = true,
@@ -769,7 +779,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 9,
                             Ativo = true,
                             Cor = "#87CEEB",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1127),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7222),
                             Icone = "repeat",
                             Nome = "Assinaturas",
                             Padrao = true,
@@ -780,7 +790,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 10,
                             Ativo = true,
                             Cor = "#98D8C8",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1130),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7226),
                             Icone = "shopping-cart",
                             Nome = "Mercado",
                             Padrao = true,
@@ -791,7 +801,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 11,
                             Ativo = true,
                             Cor = "#C9B1FF",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1132),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7229),
                             Icone = "paw-print",
                             Nome = "Pets",
                             Padrao = true,
@@ -802,7 +812,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 12,
                             Ativo = true,
                             Cor = "#FFB6C1",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1135),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7232),
                             Icone = "sparkles",
                             Nome = "Beleza",
                             Padrao = true,
@@ -813,7 +823,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 13,
                             Ativo = true,
                             Cor = "#FF4757",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1138),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7236),
                             Icone = "credit-card",
                             Nome = "Cartao de Credito",
                             Padrao = true,
@@ -824,7 +834,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 14,
                             Ativo = true,
                             Cor = "#E17055",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1142),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7240),
                             Icone = "trending-down",
                             Nome = "Investimentos",
                             Padrao = true,
@@ -835,7 +845,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 15,
                             Ativo = true,
                             Cor = "#B0BEC5",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1145),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7243),
                             Icone = "ellipsis",
                             Nome = "Outros",
                             Padrao = true,
@@ -846,7 +856,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 16,
                             Ativo = true,
                             Cor = "#27AE60",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1152),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7252),
                             Icone = "banknote",
                             Nome = "Salario",
                             Padrao = true,
@@ -857,7 +867,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 17,
                             Ativo = true,
                             Cor = "#2ECC71",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1155),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7257),
                             Icone = "laptop",
                             Nome = "Freelance",
                             Padrao = true,
@@ -868,7 +878,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 18,
                             Ativo = true,
                             Cor = "#1ABC9C",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1159),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7260),
                             Icone = "trending-up",
                             Nome = "Rendimentos",
                             Padrao = true,
@@ -879,7 +889,7 @@ namespace FinanceApp.Infrastructure.Migrations
                             Id = 19,
                             Ativo = true,
                             Cor = "#3498DB",
-                            CriadoEm = new DateTime(2026, 4, 19, 17, 55, 31, 971, DateTimeKind.Utc).AddTicks(1162),
+                            CriadoEm = new DateTime(2026, 6, 14, 2, 25, 10, 229, DateTimeKind.Utc).AddTicks(7263),
                             Icone = "plus-circle",
                             Nome = "Outros Ganhos",
                             Padrao = true,
@@ -889,9 +899,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.CodigoVerificacao", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Codigo")
                         .IsRequired()
@@ -909,11 +921,14 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<int>("Tentativas")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UsadoEm")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -924,8 +939,8 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.ConfiguracaoUsuario", b =>
                 {
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("AlertasFatura")
                         .HasColumnType("bit");
@@ -965,9 +980,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.Conta", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
@@ -987,10 +1004,16 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Icone")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -1011,8 +1034,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1023,9 +1046,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.FaturaCartao", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AnoReferencia")
                         .HasColumnType("int");
@@ -1033,13 +1058,16 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<DateTime>("AtualizadoEm")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("CartaoCreditoId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("CartaoCreditoId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
 
                     b.Property<DateOnly>("DataFechamento")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("DataPagamento")
                         .HasColumnType("date");
 
                     b.Property<DateOnly>("DataVencimento")
@@ -1053,8 +1081,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("nvarchar(15)");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("ValorPago")
                         .HasColumnType("decimal(18,2)");
@@ -1135,15 +1163,17 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.LancamentoMeta", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("MetaEconomiaId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("MetaEconomiaId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Observacoes")
                         .HasMaxLength(300)
@@ -1161,11 +1191,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.LogAuditoria", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Acao")
                         .IsRequired()
@@ -1194,8 +1224,14 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<Guid?>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ValorAnterior")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValorNovo")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -1207,9 +1243,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.MensagemWhatsApp", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CategoriaIdentificada")
                         .HasMaxLength(80)
@@ -1235,11 +1273,11 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<DateTime>("ProcessadoEm")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("TransacaoId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("TransacaoId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<decimal?>("ValorIdentificado")
                         .HasColumnType("decimal(18,2)");
@@ -1257,9 +1295,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.MetaEconomia", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("AtualizadoEm")
                         .HasColumnType("datetime2");
@@ -1280,17 +1320,23 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<DateOnly?>("DataLimite")
                         .HasColumnType("date");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Icone")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Titulo")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("ValorAlvo")
                         .HasColumnType("decimal(18,2)");
@@ -1307,15 +1353,17 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.Notificacao", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("EntidadeRelacionadaId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("EntidadeRelacionadaId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("Lida")
                         .HasColumnType("bit");
@@ -1335,8 +1383,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1348,9 +1396,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.Orcamento", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Ano")
                         .HasColumnType("int");
@@ -1367,8 +1417,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<int>("PercentualAlerta")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("ValorLimite")
                         .HasColumnType("decimal(18,2)");
@@ -1385,15 +1435,17 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.Parcelamento", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("CartaoCreditoId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("CartaoCreditoId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CategoriaId")
                         .HasColumnType("int");
@@ -1415,8 +1467,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<int>("TotalParcelas")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("ValorParcela")
                         .HasColumnType("decimal(18,2)");
@@ -1437,9 +1489,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.RegraRecorrencia", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
@@ -1447,8 +1501,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<int>("CategoriaId")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ContaId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("ContaId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
@@ -1483,8 +1537,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<DateOnly?>("UltimaGeracaoEm")
                         .HasColumnType("date");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Valor")
                         .HasColumnType("decimal(18,2)");
@@ -1504,9 +1558,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.TokenAtualizacao", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
@@ -1526,8 +1582,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1540,21 +1596,23 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.Transacao", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("AtualizadoEm")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("CartaoCreditoId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("CartaoCreditoId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CategoriaId")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ContaId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("ContaId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
@@ -1566,8 +1624,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
-                    b.Property<Guid?>("FaturaCartaoId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("FaturaCartaoId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("FormaPagamentoId")
                         .HasColumnType("int");
@@ -1584,14 +1642,14 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<Guid?>("ParcelamentoId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("ParcelamentoId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("Recorrente")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("RegraRecorrenciaId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("RegraRecorrenciaId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1606,8 +1664,11 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<int?>("TotalParcelas")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("TransferenciaContaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Valor")
                         .HasColumnType("decimal(18,2)");
@@ -1628,6 +1689,8 @@ namespace FinanceApp.Infrastructure.Migrations
 
                     b.HasIndex("RegraRecorrenciaId");
 
+                    b.HasIndex("TransferenciaContaId");
+
                     b.HasIndex("UsuarioId");
 
                     b.HasIndex("UsuarioId", "CategoriaId");
@@ -1642,15 +1705,17 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.TransferenciaConta", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("ContaDestinoId")
-                        .HasColumnType("uniqueidentifier");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<Guid>("ContaOrigemId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("ContaDestinoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ContaOrigemId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime2");
@@ -1662,8 +1727,8 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Valor")
                         .HasColumnType("decimal(18,2)");
@@ -1681,9 +1746,11 @@ namespace FinanceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.Usuario", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
@@ -1771,11 +1838,13 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.ToTable("Usuarios", "FinanceApp");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -1799,7 +1868,7 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.ToTable("Roles", "FinanceApp");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1813,8 +1882,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<string>("ClaimValue")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1823,7 +1892,7 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.ToTable("RoleClaims", "FinanceApp");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1837,8 +1906,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<string>("ClaimValue")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1847,7 +1916,7 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.ToTable("UsuarioClaims", "FinanceApp");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
                 {
                     b.Property<string>("LoginProvider")
                         .HasColumnType("nvarchar(450)");
@@ -1858,8 +1927,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -1868,13 +1937,13 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.ToTable("UsuarioLogins", "FinanceApp");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
                 {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
 
                     b.HasKey("UserId", "RoleId");
 
@@ -1883,10 +1952,10 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.ToTable("UsuarioRoles", "FinanceApp");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
                 {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.Property<string>("LoginProvider")
                         .HasColumnType("nvarchar(450)");
@@ -2196,6 +2265,11 @@ namespace FinanceApp.Infrastructure.Migrations
                         .HasForeignKey("RegraRecorrenciaId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("FinanceApp.Domain.Entities.TransferenciaConta", "TransferenciaConta")
+                        .WithMany("Transacoes")
+                        .HasForeignKey("TransferenciaContaId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("FinanceApp.Domain.Entities.Usuario", "Usuario")
                         .WithMany("Transacoes")
                         .HasForeignKey("UsuarioId")
@@ -2215,6 +2289,8 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Navigation("Parcelamento");
 
                     b.Navigation("RegraRecorrencia");
+
+                    b.Navigation("TransferenciaConta");
 
                     b.Navigation("Usuario");
                 });
@@ -2246,16 +2322,16 @@ namespace FinanceApp.Infrastructure.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
                 {
                     b.HasOne("FinanceApp.Domain.Entities.Usuario", null)
                         .WithMany()
@@ -2264,7 +2340,7 @@ namespace FinanceApp.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
                 {
                     b.HasOne("FinanceApp.Domain.Entities.Usuario", null)
                         .WithMany()
@@ -2273,9 +2349,9 @@ namespace FinanceApp.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2288,7 +2364,7 @@ namespace FinanceApp.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
                 {
                     b.HasOne("FinanceApp.Domain.Entities.Usuario", null)
                         .WithMany()
@@ -2348,6 +2424,11 @@ namespace FinanceApp.Infrastructure.Migrations
             modelBuilder.Entity("FinanceApp.Domain.Entities.Transacao", b =>
                 {
                     b.Navigation("Anexos");
+                });
+
+            modelBuilder.Entity("FinanceApp.Domain.Entities.TransferenciaConta", b =>
+                {
+                    b.Navigation("Transacoes");
                 });
 
             modelBuilder.Entity("FinanceApp.Domain.Entities.Usuario", b =>

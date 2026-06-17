@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FinanceApp.Application.DTOs.Orcamentos;
 using FinanceApp.Application.Interfaces;
 using FinanceApp.Domain.Entities;
@@ -15,13 +10,15 @@ namespace FinanceApp.Application.Services;
 public class OrcamentoService : IOrcamentoService
 {
     private readonly FinanceDbContext _context;
+    private readonly INotificacaoService _notificacaoService;
 
-    public OrcamentoService(FinanceDbContext context)
+    public OrcamentoService(FinanceDbContext context, INotificacaoService notificacaoService)
     {
         _context = context;
+        _notificacaoService = notificacaoService;
     }
 
-    public async Task<Resultado<List<OrcamentoResponse>>> ListarPorMesAsync(Guid usuarioId, int mes, int ano)
+    public async Task<Resultado<List<OrcamentoResponse>>> ListarPorMesAsync(int usuarioId, int mes, int ano)
     {
         var orcamentos = await _context.Orcamentos
             .Include(o => o.Categoria)
@@ -32,7 +29,6 @@ public class OrcamentoService : IOrcamentoService
 
         foreach (var orc in orcamentos)
         {
-            //quanto foi gasto em cada categoria naquele mês
             var totalGasto = await _context.Transacoes
                 .Where(t => t.UsuarioId == usuarioId
                          && t.CategoriaId == orc.CategoriaId
@@ -65,7 +61,7 @@ public class OrcamentoService : IOrcamentoService
         return Resultado<List<OrcamentoResponse>>.Ok(responses);
     }
 
-    public async Task<Resultado<OrcamentoResponse>> CriarAsync(Guid usuarioId, CriarOrcamentoRequest request)
+    public async Task<Resultado<OrcamentoResponse>> CriarAsync(int usuarioId, CriarOrcamentoRequest request)
     {
         var categoria = await _context.Categorias
             .FirstOrDefaultAsync(c => c.Id == request.CategoriaId && c.Ativo);
@@ -100,7 +96,6 @@ public class OrcamentoService : IOrcamentoService
         _context.Orcamentos.Add(orcamento);
         await _context.SaveChangesAsync();
 
-        // Calcular gasto atual
         var totalGasto = await _context.Transacoes
             .Where(t => t.UsuarioId == usuarioId
                      && t.CategoriaId == request.CategoriaId
@@ -125,7 +120,7 @@ public class OrcamentoService : IOrcamentoService
         }, "Orçamento criado com sucesso!");
     }
 
-    public async Task<Resultado<OrcamentoResponse>> AtualizarAsync(Guid usuarioId, Guid orcamentoId, AtualizarOrcamentoRequest request)
+    public async Task<Resultado<OrcamentoResponse>> AtualizarAsync(int usuarioId, int orcamentoId, AtualizarOrcamentoRequest request)
     {
         var orcamento = await _context.Orcamentos
             .Include(o => o.Categoria)
@@ -166,7 +161,7 @@ public class OrcamentoService : IOrcamentoService
         }, "Orçamento atualizado!");
     }
 
-    public async Task<Resultado<bool>> ExcluirAsync(Guid usuarioId, Guid orcamentoId)
+    public async Task<Resultado<bool>> ExcluirAsync(int usuarioId, int orcamentoId)
     {
         var orcamento = await _context.Orcamentos
             .FirstOrDefaultAsync(o => o.Id == orcamentoId && o.UsuarioId == usuarioId);
@@ -178,5 +173,78 @@ public class OrcamentoService : IOrcamentoService
         await _context.SaveChangesAsync();
 
         return Resultado<bool>.Ok(true, "Orçamento excluído!");
+    }
+
+    public async Task VerificarAlertasAsync(int usuarioId, int categoriaId)
+    {
+        var agora = DateTime.UtcNow;
+        var mes = agora.Month;
+        var ano = agora.Year;
+
+        var orcamento = await _context.Orcamentos
+            .Include(o => o.Categoria)
+            .FirstOrDefaultAsync(o => o.UsuarioId == usuarioId
+                                   && o.CategoriaId == categoriaId
+                                   && o.Mes == mes
+                                   && o.Ano == ano);
+
+        if (orcamento == null)
+            return;
+
+        var totalGasto = await _context.Transacoes
+            .Where(t => t.UsuarioId == usuarioId
+                     && t.CategoriaId == categoriaId
+                     && t.Tipo == TipoTransacao.DESPESA
+                     && t.Status == StatusTransacao.EFETIVADA
+                     && t.DataTransacao.Month == mes
+                     && t.DataTransacao.Year == ano)
+            .SumAsync(t => (decimal?)t.Valor) ?? 0;
+
+        if (orcamento.ValorLimite <= 0)
+            return;
+
+        var percentual = totalGasto / orcamento.ValorLimite * 100;
+
+        // Alert at 80%
+        if (percentual >= 80 && percentual < 100)
+        {
+            var jaNotificou80 = await _context.Notificacoes
+                .AnyAsync(n => n.UsuarioId == usuarioId
+                            && n.Tipo == TipoNotificacao.ALERTA_ORCAMENTO_80
+                            && n.EntidadeRelacionadaId == orcamento.Id
+                            && n.CriadoEm.Month == mes
+                            && n.CriadoEm.Year == ano);
+
+            if (!jaNotificou80)
+            {
+                await _notificacaoService.CriarAsync(
+                    usuarioId,
+                    TipoNotificacao.ALERTA_ORCAMENTO_80,
+                    $"Alerta de orçamento: {orcamento.Categoria.Nome}",
+                    $"Você usou {percentual:F0}% do seu orçamento de '{orcamento.Categoria.Nome}' (R${totalGasto:F2} de R${orcamento.ValorLimite:F2}).",
+                    orcamento.Id);
+            }
+        }
+
+        // Alert at 100%
+        if (percentual >= 100)
+        {
+            var jaNotificou100 = await _context.Notificacoes
+                .AnyAsync(n => n.UsuarioId == usuarioId
+                            && n.Tipo == TipoNotificacao.ALERTA_ORCAMENTO_100
+                            && n.EntidadeRelacionadaId == orcamento.Id
+                            && n.CriadoEm.Month == mes
+                            && n.CriadoEm.Year == ano);
+
+            if (!jaNotificou100)
+            {
+                await _notificacaoService.CriarAsync(
+                    usuarioId,
+                    TipoNotificacao.ALERTA_ORCAMENTO_100,
+                    $"Orçamento estourado: {orcamento.Categoria.Nome}",
+                    $"Você atingiu 100% do orçamento de '{orcamento.Categoria.Nome}'. Gasto: R${totalGasto:F2} / Limite: R${orcamento.ValorLimite:F2}.",
+                    orcamento.Id);
+            }
+        }
     }
 }

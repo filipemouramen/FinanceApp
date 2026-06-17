@@ -1,4 +1,4 @@
-export const Colors = {
+export const LightColors = {
   // Principais
   primary: '#6C63FF',
   primaryDark: '#534AB7',
@@ -40,6 +40,51 @@ export const Colors = {
   overlay: 'rgba(0, 0, 0, 0.5)',
   shadow: 'rgba(0, 0, 0, 0.08)',
 };
+
+export const DarkColors = {
+  // Principais
+  primary: '#7C73FF',
+  primaryDark: '#534AB7',
+  primaryLight: '#2D2B52',
+
+  // Fundo
+  background: '#121212',
+  surface: '#1E1E1E',
+  surfaceVariant: '#2A2A2A',
+
+  // Texto
+  textPrimary: '#FFFFFF',
+  textSecondary: '#AAAAAA',
+  textMuted: '#666666',
+  textWhite: '#FFFFFF',
+
+  // Status
+  success: '#2ECC71',
+  successLight: '#1A3A2A',
+  danger: '#E74C3C',
+  dangerLight: '#3A1A1A',
+  warning: '#F39C12',
+  warningLight: '#3A2E1A',
+  info: '#3498DB',
+  infoLight: '#1A2A3A',
+
+  // Receita / Despesa
+  receita: '#2ECC71',
+  receitaLight: '#1A3A2A',
+  despesa: '#E74C3C',
+  despesaLight: '#3A1A1A',
+
+  // Borders
+  border: '#333333',
+  borderLight: '#2A2A2A',
+
+  // Outros
+  disabled: '#444444',
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  shadow: 'rgba(0, 0, 0, 0.3)',
+};
+
+export const Colors = LightColors;
 
 export const Spacing = {
   xs: 4,

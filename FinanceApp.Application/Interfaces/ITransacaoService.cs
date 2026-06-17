@@ -1,18 +1,14 @@
-﻿using FinanceApp.Application.DTOs.Transacoes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FinanceApp.Application.DTOs.Transacoes;
 
-namespace FinanceApp.Application.Interfaces
+namespace FinanceApp.Application.Interfaces;
+
+public interface ITransacaoService
 {
-    public interface ITransacaoService
-    {
-        Task<Resultado<TransacaoResponse>> CriarAsync(Guid usuarioId, CriarTransacaoRequest request);
-        Task<Resultado<TransacaoResponse>> AtualizarAsync(Guid usuarioId, Guid transacaoId, AtualizarTransacaoRequest request);
-        Task<Resultado<bool>> ExcluirAsync(Guid usuarioId, Guid transacaoId);
-        Task<Resultado<TransacaoResponse>> ObterPorIdAsync(Guid usuarioId, Guid transacaoId);
-        Task<Resultado<ListaPaginada<TransacaoResponse>>> ListarAsync(Guid usuarioId, FiltroTransacaoRequest filtro);
-    }
+    Task<Resultado<TransacaoResponse>> CriarAsync(int usuarioId, CriarTransacaoRequest request);
+    Task<Resultado<TransacaoResponse>> AtualizarAsync(int usuarioId, int transacaoId, AtualizarTransacaoRequest request);
+    Task<Resultado<TransacaoResponse>> AtualizarStatusAsync(int usuarioId, int transacaoId, AtualizarStatusRequest request);
+    Task<Resultado<bool>> ExcluirAsync(int usuarioId, int transacaoId);
+    Task<Resultado<TransacaoResponse>> ObterPorIdAsync(int usuarioId, int transacaoId);
+    Task<Resultado<ListaPaginada<TransacaoResponse>>> ListarAsync(int usuarioId, FiltroTransacaoRequest filtro);
+    Task<Resultado<bool>> CancelarParcelamentoAsync(int usuarioId, int parcelamentoId);
 }

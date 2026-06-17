@@ -1,19 +1,14 @@
-﻿using FinanceApp.Application.DTOs.Contas;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FinanceApp.Application.DTOs.Contas;
 
-namespace FinanceApp.Application.Interfaces
+namespace FinanceApp.Application.Interfaces;
+
+public interface IContaService
 {
-    public interface IContaService
-    {
-        Task<Resultado<List<ContaResponse>>> ListarAsync(Guid usuarioId);
-        Task<Resultado<ContaResponse>> ObterPorIdAsync(Guid usuarioId, Guid contaId);
-        Task<Resultado<ContaResponse>> CriarAsync(Guid usuarioId, CriarContaRequest request);
-        Task<Resultado<ContaResponse>> AtualizarAsync(Guid usuarioId, Guid contaId, AtualizarContaRequest request);
-        Task<Resultado<bool>> ExcluirAsync(Guid usuarioId, Guid contaId);
-        Task<Resultado<TransferenciaResponse>> TransferirAsync(Guid usuarioId, TransferenciaRequest request);
-    }
+    Task<Resultado<List<ContaResponse>>> ListarAsync(int usuarioId);
+    Task<Resultado<ContaResponse>> ObterPorIdAsync(int usuarioId, int contaId);
+    Task<Resultado<ContaResponse>> CriarAsync(int usuarioId, CriarContaRequest request);
+    Task<Resultado<ContaResponse>> AtualizarAsync(int usuarioId, int contaId, AtualizarContaRequest request);
+    Task<Resultado<bool>> ExcluirAsync(int usuarioId, int contaId);
+    Task<Resultado<TransferenciaResponse>> TransferirAsync(int usuarioId, TransferenciaRequest request);
+    Task<Resultado<decimal>> RecalcularSaldoAsync(int usuarioId, int contaId);
 }

@@ -12,14 +12,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme/colors';
+import { useTheme } from '../../theme/useTheme';
+import { LightColors, Spacing, FontSize, BorderRadius } from '../../theme/colors';
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
+  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
+
+  const styles = getStyles(colors);
 
   async function handleLogin() {
     if (!email.trim() || !senha.trim()) {
@@ -42,21 +46,19 @@ export default function LoginScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titulo}>FinanceApp</Text>
           <Text style={styles.subtitulo}>Controle as suas finanças!</Text>
         </View>
 
-        {/* Formulário */}
         <View style={styles.form}>
           <Text style={styles.label}>E-mail</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.inputIcone} />
+            <Ionicons name="mail-outline" size={20} color={colors.textMuted} style={styles.inputIcone} />
             <TextInput
               style={styles.inputComIcone}
               placeholder="seu@email.com"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
@@ -66,11 +68,11 @@ export default function LoginScreen({ navigation }: any) {
 
           <Text style={styles.label}>Senha</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcone} />
+            <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} style={styles.inputIcone} />
             <TextInput
               style={styles.inputComIcone}
               placeholder="Sua senha"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               secureTextEntry={!mostrarSenha}
               value={senha}
               onChangeText={setSenha}
@@ -79,7 +81,7 @@ export default function LoginScreen({ navigation }: any) {
               <Ionicons
                 name={mostrarSenha ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color={Colors.textMuted}
+                color={colors.textMuted}
               />
             </TouchableOpacity>
           </View>
@@ -93,9 +95,15 @@ export default function LoginScreen({ navigation }: any) {
               {carregando ? 'Entrando...' : 'Entrar'}
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.esqueciContainer}
+            onPress={() => navigation.navigate('EsqueciSenha')}
+          >
+            <Text style={styles.esqueciTexto}>Esqueci minha senha</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Link para registro */}
         <TouchableOpacity
           style={styles.linkContainer}
           onPress={() => navigation.navigate('Registro')}
@@ -109,10 +117,10 @@ export default function LoginScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: typeof LightColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   scroll: {
     flexGrow: 1,
@@ -126,15 +134,15 @@ const styles = StyleSheet.create({
   titulo: {
     fontSize: FontSize.title,
     fontWeight: '700',
-    color: Colors.primary,
+    color: colors.primary,
   },
   subtitulo: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: Spacing.xs,
   },
   form: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     shadowColor: '#000',
@@ -146,7 +154,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSize.sm,
     fontWeight: '600',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: Spacing.xs,
     marginTop: Spacing.md,
     textTransform: 'uppercase',
@@ -155,10 +163,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     borderRadius: BorderRadius.sm,
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   inputIcone: {
     paddingLeft: Spacing.md,
@@ -171,10 +179,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.md,
     fontSize: FontSize.lg,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   botao: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
     alignItems: 'center',
@@ -184,7 +192,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   botaoTexto: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     fontSize: FontSize.lg,
     fontWeight: '600',
   },
@@ -194,10 +202,20 @@ const styles = StyleSheet.create({
   },
   linkTexto: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   linkDestaque: {
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '600',
+  },
+  esqueciContainer: {
+    alignItems: 'center',
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  esqueciTexto: {
+    fontSize: FontSize.md,
+    color: colors.primary,
+    fontWeight: '500',
   },
 });

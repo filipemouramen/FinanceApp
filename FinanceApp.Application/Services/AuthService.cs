@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
+using System.Text.Json;
 using FinanceApp.Application.DTOs.Auth;
 using FinanceApp.Application.Interfaces;
 using FinanceApp.Domain.Entities;
@@ -28,15 +20,16 @@ public class AuthService : IAuthService
     private readonly UserManager<Usuario> _userManager;
     private readonly FinanceDbContext _context;
     private readonly IConfiguration _config;
+    private readonly IEmailService _emailService;
 
-    public AuthService(UserManager<Usuario> userManager, FinanceDbContext context, IConfiguration config)
+    public AuthService(UserManager<Usuario> userManager, FinanceDbContext context, IConfiguration config, IEmailService emailService)
     {
         _userManager = userManager;
         _context = context;
         _config = config;
+        _emailService = emailService;
     }
 
-    //REGISTRO
     public async Task<Resultado<AuthResponse>> RegistrarAsync(RegistroRequest request)
     {
         var existente = await _userManager.FindByEmailAsync(request.Email);
@@ -77,7 +70,6 @@ public class AuthService : IAuthService
         return Resultado<AuthResponse>.Criado(authResponse, "Conta criada com sucesso!");
     }
 
-    //LOGIN
     public async Task<Resultado<AuthResponse>> LoginAsync(LoginRequest request)
     {
         var usuario = await _userManager.FindByEmailAsync(request.Email);
@@ -113,7 +105,6 @@ public class AuthService : IAuthService
         return Resultado<AuthResponse>.Ok(authResponse);
     }
 
-    //REFRESH TOKEN
     public async Task<Resultado<AuthResponse>> RefreshTokenAsync(RefreshTokenRequest request)
     {
         var principal = ObterPrincipalDoTokenExpirado(request.Token);
@@ -121,7 +112,7 @@ public class AuthService : IAuthService
             return Resultado<AuthResponse>.Falha("Token inválido.", 401);
 
         var usuarioIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(usuarioIdClaim) || !Guid.TryParse(usuarioIdClaim, out var usuarioId))
+        if (string.IsNullOrEmpty(usuarioIdClaim) || !int.TryParse(usuarioIdClaim, out var usuarioId))
             return Resultado<AuthResponse>.Falha("Token inválido.", 401);
 
         var refreshToken = await _context.TokensAtualizacao
@@ -150,8 +141,7 @@ public class AuthService : IAuthService
         return Resultado<AuthResponse>.Ok(authResponse);
     }
 
-    //OBTER PERFIL
-    public async Task<Resultado<UsuarioResponse>> ObterPerfilAsync(Guid usuarioId)
+    public async Task<Resultado<UsuarioResponse>> ObterPerfilAsync(int usuarioId)
     {
         var usuario = await _userManager.FindByIdAsync(usuarioId.ToString());
         if (usuario == null)
@@ -160,8 +150,7 @@ public class AuthService : IAuthService
         return Resultado<UsuarioResponse>.Ok(MapearUsuarioResponse(usuario));
     }
 
-    //ATUALIZAR PERFIL
-    public async Task<Resultado<UsuarioResponse>> AtualizarPerfilAsync(Guid usuarioId, AtualizarPerfilRequest request)
+    public async Task<Resultado<UsuarioResponse>> AtualizarPerfilAsync(int usuarioId, AtualizarPerfilRequest request)
     {
         var usuario = await _userManager.FindByIdAsync(usuarioId.ToString());
         if (usuario == null)
@@ -191,8 +180,7 @@ public class AuthService : IAuthService
         return Resultado<UsuarioResponse>.Ok(MapearUsuarioResponse(usuario), "Perfil atualizado!");
     }
 
-    //ALTERAR SENHA
-    public async Task<Resultado<bool>> AlterarSenhaAsync(Guid usuarioId, AlterarSenhaRequest request)
+    public async Task<Resultado<bool>> AlterarSenhaAsync(int usuarioId, AlterarSenhaRequest request)
     {
         var usuario = await _userManager.FindByIdAsync(usuarioId.ToString());
         if (usuario == null)
@@ -219,7 +207,6 @@ public class AuthService : IAuthService
         return Resultado<bool>.Ok(true, "Senha alterada com sucesso!");
     }
 
-    //SOLICITAR RESET SENHA
     public async Task<Resultado<bool>> SolicitarResetSenhaAsync(SolicitarResetSenhaRequest request)
     {
         var usuario = await _userManager.FindByEmailAsync(request.Email);
@@ -235,17 +222,70 @@ public class AuthService : IAuthService
         foreach (var c in codigosAntigos)
             c.UsadoEm = DateTime.UtcNow;
 
-        var codigo = new Random().Next(100000, 999999).ToString();
+        var codigo = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
         _context.CodigosVerificacao.Add(new CodigoVerificacao
         {
             UsuarioId = usuario.Id,
-            Codigo = codigo,
+            Codigo = HashCodigo(codigo),
             Finalidade = FinalidadeCodigo.RESETAR_SENHA,
             ExpiraEm = DateTime.UtcNow.AddMinutes(15)
         });
         await _context.SaveChangesAsync();
 
-        return Resultado<bool>.Ok(true, $"Código enviado para o e-mail. (DEV: {codigo})");
+        await _emailService.EnviarCodigoResetAsync(request.Email, codigo);
+
+        return Resultado<bool>.Ok(true, "Se o e-mail existir, um código foi enviado.");
+    }
+
+    public async Task<Resultado<VerificarCodigoResponse>> VerificarCodigoAsync(VerificarCodigoRequest request)
+    {
+        var usuario = await _userManager.FindByEmailAsync(request.Email);
+        if (usuario == null)
+            return Resultado<VerificarCodigoResponse>.Falha("Dados inválidos.");
+
+        var codigoVerificacao = await _context.CodigosVerificacao
+            .Where(c => c.UsuarioId == usuario.Id
+                     && c.Finalidade == FinalidadeCodigo.RESETAR_SENHA
+                     && c.UsadoEm == null)
+            .OrderByDescending(c => c.CriadoEm)
+            .FirstOrDefaultAsync();
+
+        if (codigoVerificacao == null)
+            return Resultado<VerificarCodigoResponse>.Falha("Código inválido ou expirado.");
+
+        codigoVerificacao.Tentativas++;
+
+        const int maxTentativas = 5;
+
+        if (codigoVerificacao.Tentativas > maxTentativas)
+        {
+            codigoVerificacao.UsadoEm = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return Resultado<VerificarCodigoResponse>.Falha("Número máximo de tentativas excedido. Solicite um novo código.");
+        }
+
+        if (codigoVerificacao.ExpiraEm < DateTime.UtcNow)
+        {
+            await _context.SaveChangesAsync();
+            return Resultado<VerificarCodigoResponse>.Falha("Código expirado. Solicite um novo código.");
+        }
+
+        if (!CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(codigoVerificacao.Codigo),
+                System.Text.Encoding.UTF8.GetBytes(HashCodigo(request.Codigo))))
+        {
+            await _context.SaveChangesAsync();
+            return Resultado<VerificarCodigoResponse>.Falha(
+                $"Código incorreto. {maxTentativas - codigoVerificacao.Tentativas} tentativas restantes.");
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Resultado<VerificarCodigoResponse>.Ok(new VerificarCodigoResponse
+        {
+            TokenTemporario = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
+            TentativasRestantes = maxTentativas - codigoVerificacao.Tentativas
+        }, "Código válido.");
     }
 
     public async Task<Resultado<bool>> ResetarSenhaAsync(ResetarSenhaRequest request)
@@ -256,7 +296,7 @@ public class AuthService : IAuthService
 
         var codigoVerificacao = await _context.CodigosVerificacao
             .Where(c => c.UsuarioId == usuario.Id
-                     && c.Codigo == request.Codigo
+                     && c.Codigo == HashCodigo(request.Codigo)
                      && c.Finalidade == FinalidadeCodigo.RESETAR_SENHA
                      && c.UsadoEm == null
                      && c.ExpiraEm > DateTime.UtcNow)
@@ -279,7 +319,6 @@ public class AuthService : IAuthService
 
         await RevogarFamiliaTokensAsync(usuario.Id);
 
-        // Log
         _context.LogsAuditoria.Add(new LogAuditoria
         {
             UsuarioId = usuario.Id,
@@ -292,8 +331,7 @@ public class AuthService : IAuthService
         return Resultado<bool>.Ok(true, "Senha resetada com sucesso! Faça login com a nova senha.");
     }
 
-    //REVOGAR TOKEN (LOGOUT)
-    public async Task<Resultado<bool>> RevogarTokenAsync(Guid usuarioId)
+    public async Task<Resultado<bool>> RevogarTokenAsync(int usuarioId)
     {
         await RevogarFamiliaTokensAsync(usuarioId);
 
@@ -307,6 +345,31 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         return Resultado<bool>.Ok(true, "Logout realizado. Todos os tokens foram revogados.");
+    }
+
+    public async Task<Resultado<bool>> ExcluirContaAsync(int usuarioId)
+    {
+        var usuario = await _userManager.FindByIdAsync(usuarioId.ToString());
+        if (usuario == null)
+            return Resultado<bool>.NaoEncontrado("Usuário não encontrado.");
+
+        // Excluir itens sem cascade configurado antes de deletar o usuário
+        await _context.LogsAuditoria
+            .Where(l => l.UsuarioId == usuarioId)
+            .ExecuteDeleteAsync();
+
+        await _context.Set<FinanceApp.Domain.Entities.ApelidoCategoria>()
+            .Where(a => a.UsuarioId == usuarioId)
+            .ExecuteDeleteAsync();
+
+        var resultado = await _userManager.DeleteAsync(usuario);
+        if (!resultado.Succeeded)
+        {
+            var erros = resultado.Errors.Select(e => e.Description).ToList();
+            return Resultado<bool>.Falha(erros);
+        }
+
+        return Resultado<bool>.Ok(true, "Conta e todos os dados pessoais foram excluídos permanentemente.");
     }
 
     private async Task<AuthResponse> GerarTokensAsync(Usuario usuario)
@@ -355,6 +418,14 @@ public class AuthService : IAuthService
         };
     }
 
+    private string HashCodigo(string codigo)
+    {
+        var chave = Encoding.UTF8.GetBytes(_config["Jwt:Secret"]!);
+        using var hmac = new HMACSHA256(chave);
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(codigo));
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
     private static string GerarRefreshToken()
     {
         var randomBytes = new byte[64];
@@ -363,7 +434,7 @@ public class AuthService : IAuthService
         return Convert.ToBase64String(randomBytes);
     }
 
-    private async Task RevogarFamiliaTokensAsync(Guid usuarioId)
+    private async Task RevogarFamiliaTokensAsync(int usuarioId)
     {
         var tokens = await _context.TokensAtualizacao
             .Where(t => t.UsuarioId == usuarioId && t.RevogadoEm == null)

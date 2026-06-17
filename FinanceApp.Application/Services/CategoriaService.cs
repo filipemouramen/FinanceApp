@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FinanceApp.Application.DTOs.Categorias;
 using FinanceApp.Application.Interfaces;
 using FinanceApp.Domain.Entities;
@@ -21,13 +16,12 @@ public class CategoriaService : ICategoriaService
         _context = context;
     }
 
-    public async Task<Resultado<List<CategoriaResponse>>> ListarAsync(Guid usuarioId, string? tipo = null)
+    public async Task<Resultado<List<CategoriaResponse>>> ListarAsync(int usuarioId, string? tipo = null)
     {
         var query = _context.Categorias
             .Where(c => c.Ativo && (c.UsuarioId == null || c.UsuarioId == usuarioId))
             .AsQueryable();
 
-        // Filtrar por tipo (DESPESA ou RECEITA)
         if (!string.IsNullOrEmpty(tipo) && Enum.TryParse<TipoTransacao>(tipo, out var tipoEnum))
             query = query.Where(c => c.Tipo == tipoEnum);
 
@@ -50,7 +44,7 @@ public class CategoriaService : ICategoriaService
         return Resultado<List<CategoriaResponse>>.Ok(categorias);
     }
 
-    public async Task<Resultado<CategoriaResponse>> CriarAsync(Guid usuarioId, CriarCategoriaRequest request)
+    public async Task<Resultado<CategoriaResponse>> CriarAsync(int usuarioId, CriarCategoriaRequest request)
     {
         if (!Enum.TryParse<TipoTransacao>(request.Tipo, out var tipo))
             return Resultado<CategoriaResponse>.Falha("Tipo inválido. Use as categorias: DESPESA ou RECEITA.");
@@ -87,7 +81,7 @@ public class CategoriaService : ICategoriaService
         }, "Categoria criada com sucesso!");
     }
 
-    public async Task<Resultado<CategoriaResponse>> AtualizarAsync(Guid usuarioId, int categoriaId, AtualizarCategoriaRequest request)
+    public async Task<Resultado<CategoriaResponse>> AtualizarAsync(int usuarioId, int categoriaId, AtualizarCategoriaRequest request)
     {
         var categoria = await _context.Categorias
             .FirstOrDefaultAsync(c => c.Id == categoriaId && c.Ativo);
@@ -137,7 +131,7 @@ public class CategoriaService : ICategoriaService
         }, "Categoria atualizada!");
     }
 
-    public async Task<Resultado<bool>> ExcluirAsync(Guid usuarioId, int categoriaId)
+    public async Task<Resultado<bool>> ExcluirAsync(int usuarioId, int categoriaId)
     {
         var categoria = await _context.Categorias
             .FirstOrDefaultAsync(c => c.Id == categoriaId && c.Ativo);

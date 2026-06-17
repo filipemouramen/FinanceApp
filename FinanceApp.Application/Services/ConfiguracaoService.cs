@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FinanceApp.Application.DTOs.Configuracoes;
 using FinanceApp.Application.Interfaces;
 using FinanceApp.Domain.Entities;
@@ -10,6 +5,7 @@ using FinanceApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinanceApp.Application.Services;
+
 public class ConfiguracaoService : IConfiguracaoService
 {
     private readonly FinanceDbContext _context;
@@ -19,7 +15,7 @@ public class ConfiguracaoService : IConfiguracaoService
         _context = context;
     }
 
-    public async Task<Resultado<ConfiguracaoResponse>> ObterAsync(Guid usuarioId)
+    public async Task<Resultado<ConfiguracaoResponse>> ObterAsync(int usuarioId)
     {
         var config = await _context.ConfiguracoesUsuario
             .FirstOrDefaultAsync(c => c.UsuarioId == usuarioId);
@@ -31,20 +27,10 @@ public class ConfiguracaoService : IConfiguracaoService
             await _context.SaveChangesAsync();
         }
 
-        return Resultado<ConfiguracaoResponse>.Ok(new ConfiguracaoResponse
-        {
-            Moeda = config.Moeda,
-            DiaInicioMes = config.DiaInicioMes,
-            WhatsAppAtivado = config.WhatsAppAtivado,
-            NotificacoesPush = config.NotificacoesPush,
-            AlertasOrcamento = config.AlertasOrcamento,
-            AlertasFatura = config.AlertasFatura,
-            ModoEscuro = config.ModoEscuro,
-            Idioma = config.Idioma
-        });
+        return Resultado<ConfiguracaoResponse>.Ok(MapearResponse(config));
     }
 
-    public async Task<Resultado<ConfiguracaoResponse>> AtualizarAsync(Guid usuarioId, AtualizarConfiguracaoRequest request)
+    public async Task<Resultado<ConfiguracaoResponse>> AtualizarAsync(int usuarioId, AtualizarConfiguracaoRequest request)
     {
         var config = await _context.ConfiguracoesUsuario
             .FirstOrDefaultAsync(c => c.UsuarioId == usuarioId);
@@ -95,16 +81,18 @@ public class ConfiguracaoService : IConfiguracaoService
         config.AtualizadoEm = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return Resultado<ConfiguracaoResponse>.Ok(new ConfiguracaoResponse
-        {
-            Moeda = config.Moeda,
-            DiaInicioMes = config.DiaInicioMes,
-            WhatsAppAtivado = config.WhatsAppAtivado,
-            NotificacoesPush = config.NotificacoesPush,
-            AlertasOrcamento = config.AlertasOrcamento,
-            AlertasFatura = config.AlertasFatura,
-            ModoEscuro = config.ModoEscuro,
-            Idioma = config.Idioma
-        }, "Configurações atualizadas!");
+        return Resultado<ConfiguracaoResponse>.Ok(MapearResponse(config), "Configurações atualizadas!");
     }
+
+    private static ConfiguracaoResponse MapearResponse(ConfiguracaoUsuario config) => new()
+    {
+        Moeda = config.Moeda,
+        DiaInicioMes = config.DiaInicioMes,
+        WhatsAppAtivado = config.WhatsAppAtivado,
+        NotificacoesPush = config.NotificacoesPush,
+        AlertasOrcamento = config.AlertasOrcamento,
+        AlertasFatura = config.AlertasFatura,
+        ModoEscuro = config.ModoEscuro,
+        Idioma = config.Idioma
+    };
 }

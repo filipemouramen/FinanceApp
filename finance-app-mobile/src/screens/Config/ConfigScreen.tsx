@@ -10,16 +10,22 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../theme/useTheme';
 import api from '../../api/client';
 import { ConfiguracaoResponse, Resultado } from '../../types';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme/colors';
+import { LightColors, Spacing, FontSize, BorderRadius } from '../../theme/colors';
+import ExportacaoModal from '../Exportacao/ExportacaoModal';
 
 export default function ConfigScreen() {
   const { usuario, logout } = useAuth();
+  const { colors, isDark, toggleTheme } = useTheme();
+  const navigation = useNavigation<any>();
   const [config, setConfig] = useState<ConfiguracaoResponse | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [exportacaoVisivel, setExportacaoVisivel] = useState(false);
+  const styles = getStyles(colors);
 
   useFocusEffect(
     useCallback(() => {
@@ -82,7 +88,7 @@ export default function ConfigScreen() {
     <ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={carregando} onRefresh={carregarConfiguracoes} colors={[Colors.primary]} />
+        <RefreshControl refreshing={carregando} onRefresh={carregarConfiguracoes} colors={[colors.primary]} />
       }
       showsVerticalScrollIndicator={false}
     >
@@ -103,7 +109,7 @@ export default function ConfigScreen() {
           <Text style={styles.perfilEmail}>{usuario?.email}</Text>
           {usuario?.telefoneWhatsApp && (
             <View style={styles.perfilTelContainer}>
-              <Ionicons name="logo-whatsapp" size={14} color={Colors.success} />
+              <Ionicons name="logo-whatsapp" size={14} color={colors.success} />
               <Text style={styles.perfilTelefone}>{usuario.telefoneWhatsApp}</Text>
             </View>
           )}
@@ -115,14 +121,14 @@ export default function ConfigScreen() {
       <View style={styles.secaoCard}>
         <View style={styles.configItem}>
           <View style={styles.configEsquerda}>
-            <Ionicons name="moon-outline" size={22} color={Colors.textSecondary} />
+            <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
             <Text style={styles.configTexto}>Modo escuro</Text>
           </View>
           <Switch
-            value={config?.modoEscuro || false}
-            onValueChange={(valor) => atualizarConfig({ modoEscuro: valor })}
-            trackColor={{ false: Colors.border, true: Colors.primary }}
-            thumbColor={Colors.textWhite}
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={colors.textWhite}
           />
         </View>
 
@@ -130,7 +136,7 @@ export default function ConfigScreen() {
 
         <View style={styles.configItem}>
           <View style={styles.configEsquerda}>
-            <Ionicons name="calendar-outline" size={22} color={Colors.textSecondary} />
+            <Ionicons name="calendar-outline" size={22} color={colors.textSecondary} />
             <View>
               <Text style={styles.configTexto}>Dia de início do mês</Text>
               <Text style={styles.configSub}>Dia {config?.diaInicioMes || 1}</Text>
@@ -142,7 +148,7 @@ export default function ConfigScreen() {
 
         <View style={styles.configItem}>
           <View style={styles.configEsquerda}>
-            <Ionicons name="cash-outline" size={22} color={Colors.textSecondary} />
+            <Ionicons name="cash-outline" size={22} color={colors.textSecondary} />
             <View>
               <Text style={styles.configTexto}>Moeda</Text>
               <Text style={styles.configSub}>{config?.moeda || 'BRL'}</Text>
@@ -156,14 +162,14 @@ export default function ConfigScreen() {
       <View style={styles.secaoCard}>
         <View style={styles.configItem}>
           <View style={styles.configEsquerda}>
-            <Ionicons name="notifications-outline" size={22} color={Colors.textSecondary} />
+            <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} />
             <Text style={styles.configTexto}>Notificações push</Text>
           </View>
           <Switch
             value={config?.notificacoesPush || false}
             onValueChange={(valor) => atualizarConfig({ notificacoesPush: valor })}
-            trackColor={{ false: Colors.border, true: Colors.primary }}
-            thumbColor={Colors.textWhite}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={colors.textWhite}
           />
         </View>
 
@@ -171,14 +177,14 @@ export default function ConfigScreen() {
 
         <View style={styles.configItem}>
           <View style={styles.configEsquerda}>
-            <Ionicons name="pie-chart-outline" size={22} color={Colors.textSecondary} />
+            <Ionicons name="pie-chart-outline" size={22} color={colors.textSecondary} />
             <Text style={styles.configTexto}>Alertas de orçamento</Text>
           </View>
           <Switch
             value={config?.alertasOrcamento || false}
             onValueChange={(valor) => atualizarConfig({ alertasOrcamento: valor })}
-            trackColor={{ false: Colors.border, true: Colors.primary }}
-            thumbColor={Colors.textWhite}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={colors.textWhite}
           />
         </View>
 
@@ -186,14 +192,14 @@ export default function ConfigScreen() {
 
         <View style={styles.configItem}>
           <View style={styles.configEsquerda}>
-            <Ionicons name="card-outline" size={22} color={Colors.textSecondary} />
+            <Ionicons name="card-outline" size={22} color={colors.textSecondary} />
             <Text style={styles.configTexto}>Alertas de fatura</Text>
           </View>
           <Switch
             value={config?.alertasFatura || false}
             onValueChange={(valor) => atualizarConfig({ alertasFatura: valor })}
-            trackColor={{ false: Colors.border, true: Colors.primary }}
-            thumbColor={Colors.textWhite}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={colors.textWhite}
           />
         </View>
       </View>
@@ -212,10 +218,68 @@ export default function ConfigScreen() {
           <Switch
             value={config?.whatsAppAtivado || false}
             onValueChange={(valor) => atualizarConfig({ whatsAppAtivado: valor })}
-            trackColor={{ false: Colors.border, true: '#25D366' }}
-            thumbColor={Colors.textWhite}
+            trackColor={{ false: colors.border, true: '#25D366' }}
+            thumbColor={colors.textWhite}
           />
         </View>
+      </View>
+
+      {/* Modal de Exportação */}
+      <ExportacaoModal
+        visivel={exportacaoVisivel}
+        onFechar={() => setExportacaoVisivel(false)}
+      />
+
+      {/* Seção: Ferramentas */}
+      <Text style={styles.secaoTitulo}>Ferramentas</Text>
+      <View style={styles.secaoCard}>
+        <TouchableOpacity style={styles.configItem} onPress={() => setExportacaoVisivel(true)}>
+          <View style={styles.configEsquerda}>
+            <Ionicons name="document-text-outline" size={22} color={colors.textSecondary} />
+            <Text style={styles.configTexto}>Exportar extrato PDF</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <View style={styles.separador} />
+
+        <TouchableOpacity style={styles.configItem} onPress={() => navigation.navigate('Orcamentos')}>
+          <View style={styles.configEsquerda}>
+            <Ionicons name="pie-chart-outline" size={22} color={colors.textSecondary} />
+            <Text style={styles.configTexto}>Orçamentos</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <View style={styles.separador} />
+
+        <TouchableOpacity style={styles.configItem} onPress={() => navigation.navigate('Metas')}>
+          <View style={styles.configEsquerda}>
+            <Ionicons name="trophy-outline" size={22} color={colors.textSecondary} />
+            <Text style={styles.configTexto}>Metas de economia</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <View style={styles.separador} />
+
+        <TouchableOpacity style={styles.configItem} onPress={() => navigation.navigate('Notificacoes')}>
+          <View style={styles.configEsquerda}>
+            <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} />
+            <Text style={styles.configTexto}>Central de notificações</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <View style={styles.separador} />
+
+        <TouchableOpacity style={styles.configItem} onPress={() => navigation.navigate('Categorias')}>
+          <View style={styles.configEsquerda}>
+            <Ionicons name="pricetag-outline" size={22} color={colors.textSecondary} />
+            <Text style={styles.configTexto}>Gerenciar categorias</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
 
       {/* Seção: Sobre */}
@@ -223,7 +287,7 @@ export default function ConfigScreen() {
       <View style={styles.secaoCard}>
         <View style={styles.configItem}>
           <View style={styles.configEsquerda}>
-            <Ionicons name="information-circle-outline" size={22} color={Colors.textSecondary} />
+            <Ionicons name="information-circle-outline" size={22} color={colors.textSecondary} />
             <View>
               <Text style={styles.configTexto}>Versão do app</Text>
               <Text style={styles.configSub}>1.0.0</Text>
@@ -234,7 +298,7 @@ export default function ConfigScreen() {
 
       {/* Botão Logout */}
       <TouchableOpacity style={styles.botaoLogout} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
+        <Ionicons name="log-out-outline" size={22} color={colors.danger} />
         <Text style={styles.botaoLogoutTexto}>Sair da conta</Text>
       </TouchableOpacity>
 
@@ -243,29 +307,21 @@ export default function ConfigScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+const getStyles = (colors: typeof LightColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingHorizontal: Spacing.lg,
     paddingTop: 60,
     paddingBottom: Spacing.md,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
-  headerTitulo: {
-    fontSize: FontSize.xxl,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  // Perfil
+  headerTitulo: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
   perfilCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     margin: Spacing.lg,
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
@@ -280,43 +336,20 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarTexto: {
-    fontSize: FontSize.xxl,
-    fontWeight: '700',
-    color: Colors.textWhite,
-  },
-  perfilInfo: {
-    flex: 1,
-  },
-  perfilNome: {
-    fontSize: FontSize.xl,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  perfilEmail: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  perfilTelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  perfilTelefone: {
-    fontSize: FontSize.sm,
-    color: Colors.success,
-  },
-  // Seções
+  avatarTexto: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textWhite },
+  perfilInfo: { flex: 1 },
+  perfilNome: { fontSize: FontSize.xl, fontWeight: '700', color: colors.textPrimary },
+  perfilEmail: { fontSize: FontSize.md, color: colors.textSecondary, marginTop: 2 },
+  perfilTelContainer: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  perfilTelefone: { fontSize: FontSize.sm, color: colors.success },
   secaoTitulo: {
     fontSize: FontSize.sm,
     fontWeight: '700',
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginHorizontal: Spacing.lg,
@@ -324,7 +357,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   secaoCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     marginHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg,
     shadowColor: '#000',
@@ -339,28 +372,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.md,
   },
-  configEsquerda: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  configTexto: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    fontWeight: '500',
-  },
-  configSub: {
-    fontSize: FontSize.sm,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  separador: {
-    height: 1,
-    backgroundColor: Colors.borderLight,
-    marginHorizontal: Spacing.md,
-  },
-  // Logout
+  configEsquerda: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  configTexto: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
+  configSub: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
+  separador: { height: 1, backgroundColor: colors.borderLight, marginHorizontal: Spacing.md },
   botaoLogout: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -371,11 +386,7 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: BorderRadius.sm,
     borderWidth: 1.5,
-    borderColor: Colors.danger,
+    borderColor: colors.danger,
   },
-  botaoLogoutTexto: {
-    fontSize: FontSize.lg,
-    fontWeight: '600',
-    color: Colors.danger,
-  },
+  botaoLogoutTexto: { fontSize: FontSize.lg, fontWeight: '600', color: colors.danger },
 });

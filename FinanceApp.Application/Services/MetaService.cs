@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FinanceApp.Application.DTOs.Metas;
 using FinanceApp.Application.Interfaces;
 using FinanceApp.Domain.Entities;
+using FinanceApp.Domain.Enums;
 using FinanceApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,13 +10,15 @@ namespace FinanceApp.Application.Services;
 public class MetaService : IMetaService
 {
     private readonly FinanceDbContext _context;
+    private readonly INotificacaoService _notificacaoService;
 
-    public MetaService(FinanceDbContext context)
+    public MetaService(FinanceDbContext context, INotificacaoService notificacaoService)
     {
         _context = context;
+        _notificacaoService = notificacaoService;
     }
 
-    public async Task<Resultado<List<MetaResponse>>> ListarAsync(Guid usuarioId)
+    public async Task<Resultado<List<MetaResponse>>> ListarAsync(int usuarioId)
     {
         var metas = await _context.MetasEconomia
             .Include(m => m.Lancamentos)
@@ -55,7 +53,7 @@ public class MetaService : IMetaService
         return Resultado<List<MetaResponse>>.Ok(metas);
     }
 
-    public async Task<Resultado<MetaResponse>> ObterPorIdAsync(Guid usuarioId, Guid metaId)
+    public async Task<Resultado<MetaResponse>> ObterPorIdAsync(int usuarioId, int metaId)
     {
         var meta = await _context.MetasEconomia
             .Include(m => m.Lancamentos)
@@ -91,7 +89,7 @@ public class MetaService : IMetaService
         return Resultado<MetaResponse>.Ok(meta);
     }
 
-    public async Task<Resultado<MetaResponse>> CriarAsync(Guid usuarioId, CriarMetaRequest request)
+    public async Task<Resultado<MetaResponse>> CriarAsync(int usuarioId, CriarMetaRequest request)
     {
         if (request.DataLimite.HasValue && request.DataLimite.Value <= DateOnly.FromDateTime(DateTime.UtcNow))
             return Resultado<MetaResponse>.Falha("A data limite deve ser uma data futura.");
@@ -124,7 +122,7 @@ public class MetaService : IMetaService
         }, "Meta criada com sucesso!");
     }
 
-    public async Task<Resultado<MetaResponse>> AtualizarAsync(Guid usuarioId, Guid metaId, AtualizarMetaRequest request)
+    public async Task<Resultado<MetaResponse>> AtualizarAsync(int usuarioId, int metaId, AtualizarMetaRequest request)
     {
         var meta = await _context.MetasEconomia
             .Include(m => m.Lancamentos)
@@ -190,7 +188,8 @@ public class MetaService : IMetaService
                 .ToList()
         }, "Meta atualizada!");
     }
-    public async Task<Resultado<bool>> ExcluirAsync(Guid usuarioId, Guid metaId)
+
+    public async Task<Resultado<bool>> ExcluirAsync(int usuarioId, int metaId)
     {
         var meta = await _context.MetasEconomia
             .FirstOrDefaultAsync(m => m.Id == metaId && m.UsuarioId == usuarioId);
@@ -198,13 +197,14 @@ public class MetaService : IMetaService
         if (meta == null)
             return Resultado<bool>.NaoEncontrado("Meta não encontrada.");
 
+        // soft delete via AuditInterceptor (MetaEconomia implements ISoftDeletable)
         _context.MetasEconomia.Remove(meta);
         await _context.SaveChangesAsync();
 
         return Resultado<bool>.Ok(true, "Meta excluída!");
     }
 
-    public async Task<Resultado<MetaResponse>> AdicionarLancamentoAsync(Guid usuarioId, Guid metaId, LancamentoMetaRequest request)
+    public async Task<Resultado<MetaResponse>> AdicionarLancamentoAsync(int usuarioId, int metaId, LancamentoMetaRequest request)
     {
         var meta = await _context.MetasEconomia
             .Include(m => m.Lancamentos)
@@ -238,14 +238,12 @@ public class MetaService : IMetaService
             meta.Concluida = true;
             meta.ConcluidaEm = DateTime.UtcNow;
 
-            _context.Notificacoes.Add(new Notificacao
-            {
-                UsuarioId = usuarioId,
-                Titulo = "Meta atingida!",
-                Mensagem = $"Parabéns! Você completou a meta '{meta.Titulo}' de R${meta.ValorAlvo:F2}!",
-                Tipo = Domain.Enums.TipoNotificacao.META_ATINGIDA,
-                EntidadeRelacionadaId = meta.Id
-            });
+            await _notificacaoService.CriarAsync(
+                usuarioId,
+                TipoNotificacao.META_ATINGIDA,
+                "Meta atingida!",
+                $"Parabéns! Você completou a meta '{meta.Titulo}' de R${meta.ValorAlvo:F2}!",
+                meta.Id);
         }
 
         await _context.SaveChangesAsync();

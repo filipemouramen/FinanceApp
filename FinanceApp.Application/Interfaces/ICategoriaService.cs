@@ -1,17 +1,11 @@
-﻿using FinanceApp.Application.DTOs.Categorias;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FinanceApp.Application.DTOs.Categorias;
 
-namespace FinanceApp.Application.Interfaces
+namespace FinanceApp.Application.Interfaces;
+
+public interface ICategoriaService
 {
-    public interface ICategoriaService
-    {
-        Task<Resultado<List<CategoriaResponse>>> ListarAsync(Guid usuarioId, string? tipo = null);
-        Task<Resultado<CategoriaResponse>> CriarAsync(Guid usuarioId, CriarCategoriaRequest request);
-        Task<Resultado<CategoriaResponse>> AtualizarAsync(Guid usuarioId, int categoriaId, AtualizarCategoriaRequest request);
-        Task<Resultado<bool>> ExcluirAsync(Guid usuarioId, int categoriaId);
-    }
+    Task<Resultado<List<CategoriaResponse>>> ListarAsync(int usuarioId, string? tipo = null);
+    Task<Resultado<CategoriaResponse>> CriarAsync(int usuarioId, CriarCategoriaRequest request);
+    Task<Resultado<CategoriaResponse>> AtualizarAsync(int usuarioId, int categoriaId, AtualizarCategoriaRequest request);
+    Task<Resultado<bool>> ExcluirAsync(int usuarioId, int categoriaId);
 }

@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import api from '../api/client';
 import { AuthResponse, UsuarioResponse, Resultado } from '../types';
 
-// Definir o que o contexto oferece pra todas as telas
+const CHAVE_TOKEN = 'finance_token';
+const CHAVE_REFRESH = 'finance_refreshToken';
+const CHAVE_USUARIO = 'finance_usuario';
+
 interface AuthContextData {
   usuario: UsuarioResponse | null;
   token: string | null;
@@ -15,54 +18,49 @@ interface AuthContextData {
   atualizarPerfil: (usuario: UsuarioResponse) => void;
 }
 
-// Criar o contexto
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-// Provider que envolve o app inteiro
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<UsuarioResponse | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
 
-  // Ao abrir o app, verificar se tem sessão salva
   useEffect(() => {
     carregarSessao();
   }, []);
 
   async function carregarSessao() {
     try {
-      const tokenSalvo = await AsyncStorage.getItem('@finance:token');
-      const usuarioSalvo = await AsyncStorage.getItem('@finance:usuario');
+      const tokenSalvo = await SecureStore.getItemAsync(CHAVE_TOKEN);
+      const usuarioSalvo = await SecureStore.getItemAsync(CHAVE_USUARIO);
 
       if (tokenSalvo && usuarioSalvo) {
         setToken(tokenSalvo);
         setUsuario(JSON.parse(usuarioSalvo));
       }
-    } catch (error) {
-      console.log('Erro ao carregar sessão:', error);
+    } catch {
+      // sessão não encontrada ou corrompida — continua como deslogado
     } finally {
       setCarregando(false);
     }
   }
 
-  // Salvar sessão no celular
   async function salvarSessao(dados: AuthResponse) {
-    await AsyncStorage.setItem('@finance:token', dados.token);
-    await AsyncStorage.setItem('@finance:refreshToken', dados.refreshToken);
-    await AsyncStorage.setItem('@finance:usuario', JSON.stringify(dados.usuario));
-
+    try {
+      await SecureStore.setItemAsync(CHAVE_TOKEN, dados.token);
+      await SecureStore.setItemAsync(CHAVE_REFRESH, dados.refreshToken);
+      await SecureStore.setItemAsync(CHAVE_USUARIO, JSON.stringify(dados.usuario));
+    } catch {
+      // SecureStore não disponível na plataforma web — sessão mantida apenas em memória
+    }
     setToken(dados.token);
     setUsuario(dados.usuario);
   }
 
-  // Login
   async function login(email: string, senha: string): Promise<Resultado<AuthResponse>> {
     try {
-      console.log('[Auth] Tentando login com:', email);
       const response = await api.post('/auth/login', { email, senha });
       const resultado: Resultado<AuthResponse> = response.data;
-
-      console.log('[Auth] Resposta do login:', resultado);
 
       if (resultado.sucesso && resultado.dados) {
         await salvarSessao(resultado.dados);
@@ -70,9 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return resultado;
     } catch (error: any) {
-      console.error('[Auth] Erro no login:', error.message);
       if (error.response?.data) {
-        console.error('[Auth] Resposta do servidor:', error.response.data);
         return error.response.data;
       }
       return {
@@ -82,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Registrar
   async function registrar(
     nome: string,
     email: string,
@@ -91,7 +86,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     telefone?: string
   ): Promise<Resultado<AuthResponse>> {
     try {
-      console.log('[Auth] Tentando registrar:', { nome, email, telefone });
       const response = await api.post('/auth/registrar', {
         nomeCompleto: nome,
         email,
@@ -101,17 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const resultado: Resultado<AuthResponse> = response.data;
 
-      console.log('[Auth] Resposta do registro:', resultado);
-
       if (resultado.sucesso && resultado.dados) {
         await salvarSessao(resultado.dados);
       }
 
       return resultado;
     } catch (error: any) {
-      console.error('[Auth] Erro no registro:', error.message);
       if (error.response?.data) {
-        console.error('[Auth] Resposta do servidor:', error.response.data);
         return error.response.data;
       }
       return {
@@ -121,29 +111,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Logout
   async function logout() {
     try {
       await api.post('/auth/logout');
-    } catch (error) {
-      // Mesmo se falhar no servidor, limpa local
+    } catch {
+      // mesmo se falhar no servidor, limpa localmente
     }
 
-    await AsyncStorage.multiRemove([
-      '@finance:token',
-      '@finance:refreshToken',
-      '@finance:usuario',
-    ]);
-
+    try {
+      await SecureStore.deleteItemAsync(CHAVE_TOKEN);
+      await SecureStore.deleteItemAsync(CHAVE_REFRESH);
+      await SecureStore.deleteItemAsync(CHAVE_USUARIO);
+    } catch { /* web */ }
     setToken(null);
     setUsuario(null);
   }
 
-  // Atualizar dados do perfil localmente
   function atualizarPerfil(usuarioAtualizado: UsuarioResponse) {
     setUsuario(usuarioAtualizado);
-    AsyncStorage.setItem('@finance:usuario', JSON.stringify(usuarioAtualizado));
+    SecureStore.setItemAsync(CHAVE_USUARIO, JSON.stringify(usuarioAtualizado)).catch(() => {});
   }
+
+  // Hook de teste (apenas dev) — permite que Playwright defina sessão diretamente
+  useEffect(() => {
+    if (__DEV__) {
+      (window as any).__testSetAuth = (dados: AuthResponse) => salvarSessao(dados);
+    }
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -163,7 +157,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Hook pra usar em qualquer tela
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

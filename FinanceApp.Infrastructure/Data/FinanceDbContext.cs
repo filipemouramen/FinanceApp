@@ -1,12 +1,13 @@
-﻿using FinanceApp.Domain.Entities;
+using FinanceApp.Domain.Entities;
 using FinanceApp.Domain.Enums;
+using FinanceApp.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinanceApp.Infrastructure.Data;
 
-public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, Guid>
+public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<int>, int>
 {
     public FinanceDbContext(DbContextOptions<FinanceDbContext> options) : base(options) { }
 
@@ -35,16 +36,18 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
     {
         base.OnModelCreating(builder);
 
+        // ===== IDENTITY TABLES =====
         builder.Entity<Usuario>().ToTable("Usuarios", "FinanceApp");
-        builder.Entity<IdentityRole<Guid>>().ToTable("Roles", "FinanceApp");
-        builder.Entity<IdentityUserRole<Guid>>().ToTable("UsuarioRoles", "FinanceApp");
-        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UsuarioClaims", "FinanceApp");
-        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UsuarioLogins", "FinanceApp");
-        builder.Entity<IdentityUserToken<Guid>>().ToTable("UsuarioTokens", "FinanceApp");
-        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims", "FinanceApp");
+        builder.Entity<IdentityRole<int>>().ToTable("Roles", "FinanceApp");
+        builder.Entity<IdentityUserRole<int>>().ToTable("UsuarioRoles", "FinanceApp");
+        builder.Entity<IdentityUserClaim<int>>().ToTable("UsuarioClaims", "FinanceApp");
+        builder.Entity<IdentityUserLogin<int>>().ToTable("UsuarioLogins", "FinanceApp");
+        builder.Entity<IdentityUserToken<int>>().ToTable("UsuarioTokens", "FinanceApp");
+        builder.Entity<IdentityRoleClaim<int>>().ToTable("RoleClaims", "FinanceApp");
 
         builder.Entity<Usuario>(e =>
         {
+            e.Property(u => u.Id).UseIdentityColumn();
             e.Property(u => u.NomeCompleto).HasMaxLength(150).IsRequired();
             e.Property(u => u.TelefoneWhatsApp).HasMaxLength(20);
             e.Property(u => u.FotoUrl).HasMaxLength(500);
@@ -53,10 +56,16 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
                 .HasFilter("[TelefoneWhatsApp] IS NOT NULL");
         });
 
+        // ===== GLOBAL QUERY FILTERS (soft delete) =====
+        builder.Entity<Conta>().HasQueryFilter(c => !c.IsDeleted);
+        builder.Entity<CartaoCredito>().HasQueryFilter(c => !c.IsDeleted);
+        builder.Entity<MetaEconomia>().HasQueryFilter(m => !m.IsDeleted);
+
         builder.Entity<TokenAtualizacao>(e =>
         {
             e.ToTable("TokensAtualizacao", "FinanceApp");
             e.HasKey(t => t.Id);
+            e.Property(t => t.Id).UseIdentityColumn();
             e.Property(t => t.Token).HasMaxLength(512).IsRequired();
             e.Property(t => t.SubstituidoPor).HasMaxLength(512);
             e.HasIndex(t => t.Token);
@@ -73,7 +82,8 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("CodigosVerificacao", "FinanceApp");
             e.HasKey(c => c.Id);
-            e.Property(c => c.Codigo).HasMaxLength(10).IsRequired();
+            e.Property(c => c.Id).UseIdentityColumn();
+            e.Property(c => c.Codigo).HasMaxLength(64).IsRequired();
             e.Property(c => c.Finalidade).HasMaxLength(30)
                 .HasConversion<string>().IsRequired();
             e.Ignore(c => c.Expirado);
@@ -113,6 +123,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("Contas", "FinanceApp");
             e.HasKey(c => c.Id);
+            e.Property(c => c.Id).UseIdentityColumn();
             e.Property(c => c.Nome).HasMaxLength(100).IsRequired();
             e.Property(c => c.TipoConta).HasMaxLength(20)
                 .HasConversion<string>().IsRequired();
@@ -132,10 +143,11 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("CartoesCredito", "FinanceApp");
             e.HasKey(c => c.Id);
+            e.Property(c => c.Id).UseIdentityColumn();
             e.Property(c => c.Nome).HasMaxLength(100).IsRequired();
             e.Property(c => c.Bandeira).HasMaxLength(30);
             e.Property(c => c.UltimosDigitos).HasMaxLength(4);
-            e.Property(c => c.Limite).HasColumnType("decimal(18,2)");
+            e.Property(c => c.LimiteTotal).HasColumnType("decimal(18,2)");
             e.Property(c => c.LimiteDisponivel).HasColumnType("decimal(18,2)");
             e.Property(c => c.Cor).HasMaxLength(7);
             e.HasIndex(c => c.UsuarioId);
@@ -153,6 +165,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("FaturasCartao", "FinanceApp");
             e.HasKey(f => f.Id);
+            e.Property(f => f.Id).UseIdentityColumn();
             e.Property(f => f.ValorTotal).HasColumnType("decimal(18,2)");
             e.Property(f => f.ValorPago).HasColumnType("decimal(18,2)");
             e.Property(f => f.Status).HasMaxLength(15)
@@ -174,6 +187,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("Transacoes", "FinanceApp");
             e.HasKey(t => t.Id);
+            e.Property(t => t.Id).UseIdentityColumn();
             e.Property(t => t.Valor).HasColumnType("decimal(18,2)");
             e.Property(t => t.Tipo).HasMaxLength(10)
                 .HasConversion<string>().IsRequired();
@@ -190,6 +204,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
             e.HasIndex(t => new { t.UsuarioId, t.CategoriaId });
             e.HasIndex(t => new { t.UsuarioId, t.ContaId });
             e.HasIndex(t => t.FaturaCartaoId);
+            e.HasIndex(t => t.TransferenciaContaId);
 
             e.HasOne(t => t.Usuario)
                 .WithMany(u => u.Transacoes)
@@ -215,6 +230,10 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
                 .WithMany(f => f.Transacoes)
                 .HasForeignKey(t => t.FaturaCartaoId)
                 .OnDelete(DeleteBehavior.NoAction);
+            e.HasOne(t => t.TransferenciaConta)
+                .WithMany(tc => tc.Transacoes)
+                .HasForeignKey(t => t.TransferenciaContaId)
+                .OnDelete(DeleteBehavior.NoAction);
             e.HasOne(t => t.RegraRecorrencia)
                 .WithMany(r => r.Transacoes)
                 .HasForeignKey(t => t.RegraRecorrenciaId)
@@ -229,6 +248,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("Parcelamentos", "FinanceApp");
             e.HasKey(p => p.Id);
+            e.Property(p => p.Id).UseIdentityColumn();
             e.Property(p => p.Descricao).HasMaxLength(300).IsRequired();
             e.Property(p => p.ValorTotal).HasColumnType("decimal(18,2)");
             e.Property(p => p.ValorParcela).HasColumnType("decimal(18,2)");
@@ -251,6 +271,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("RegrasRecorrencia", "FinanceApp");
             e.HasKey(r => r.Id);
+            e.Property(r => r.Id).UseIdentityColumn();
             e.Property(r => r.Descricao).HasMaxLength(300).IsRequired();
             e.Property(r => r.Valor).HasColumnType("decimal(18,2)");
             e.Property(r => r.Tipo).HasMaxLength(10)
@@ -279,6 +300,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("Orcamentos", "FinanceApp");
             e.HasKey(o => o.Id);
+            e.Property(o => o.Id).UseIdentityColumn();
             e.Property(o => o.ValorLimite).HasColumnType("decimal(18,2)");
             e.HasIndex(o => new { o.UsuarioId, o.CategoriaId, o.Mes, o.Ano })
                 .IsUnique();
@@ -296,6 +318,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("MetasEconomia", "FinanceApp");
             e.HasKey(m => m.Id);
+            e.Property(m => m.Id).UseIdentityColumn();
             e.Property(m => m.Titulo).HasMaxLength(150).IsRequired();
             e.Property(m => m.ValorAlvo).HasColumnType("decimal(18,2)");
             e.Property(m => m.ValorAtual).HasColumnType("decimal(18,2)");
@@ -311,6 +334,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("LancamentosMeta", "FinanceApp");
             e.HasKey(l => l.Id);
+            e.Property(l => l.Id).UseIdentityColumn();
             e.Property(l => l.Valor).HasColumnType("decimal(18,2)");
             e.Property(l => l.Observacoes).HasMaxLength(300);
             e.HasOne(l => l.MetaEconomia)
@@ -323,6 +347,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("TransferenciasContas", "FinanceApp");
             e.HasKey(t => t.Id);
+            e.Property(t => t.Id).UseIdentityColumn();
             e.Property(t => t.Valor).HasColumnType("decimal(18,2)");
             e.Property(t => t.Descricao).HasMaxLength(300);
             e.HasOne(t => t.Usuario)
@@ -343,6 +368,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("Anexos", "FinanceApp");
             e.HasKey(a => a.Id);
+            e.Property(a => a.Id).UseIdentityColumn();
             e.Property(a => a.NomeArquivo).HasMaxLength(255).IsRequired();
             e.Property(a => a.UrlArquivo).HasMaxLength(500).IsRequired();
             e.Property(a => a.TipoArquivo).HasMaxLength(20).IsRequired();
@@ -361,6 +387,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("MensagensWhatsApp", "FinanceApp");
             e.HasKey(m => m.Id);
+            e.Property(m => m.Id).UseIdentityColumn();
             e.Property(m => m.NumeroTelefone).HasMaxLength(20).IsRequired();
             e.Property(m => m.MensagemOriginal).HasMaxLength(1000).IsRequired();
             e.Property(m => m.CategoriaIdentificada).HasMaxLength(80);
@@ -399,6 +426,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         {
             e.ToTable("Notificacoes", "FinanceApp");
             e.HasKey(n => n.Id);
+            e.Property(n => n.Id).UseIdentityColumn();
             e.Property(n => n.Titulo).HasMaxLength(150).IsRequired();
             e.Property(n => n.Mensagem).HasMaxLength(500).IsRequired();
             e.Property(n => n.Tipo).HasMaxLength(30)
@@ -437,6 +465,7 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
                 .IsDescending(false, true);
         });
 
+        // ===== SEED DATA =====
         builder.Entity<Categoria>().HasData(
             new Categoria { Id = 1, Nome = "Alimentacao", Icone = "utensils", Cor = "#FF6B6B", Tipo = TipoTransacao.DESPESA, Padrao = true, UsuarioId = null },
             new Categoria { Id = 2, Nome = "Transporte", Icone = "car", Cor = "#4ECDC4", Tipo = TipoTransacao.DESPESA, Padrao = true, UsuarioId = null },
@@ -469,99 +498,84 @@ public class FinanceDbContext : IdentityDbContext<Usuario, IdentityRole<Guid>, G
         );
 
         builder.Entity<ApelidoCategoria>().HasData(
-            // Alimentacao
-            new { Id = 1, CategoriaId = 1, Apelido = "comida", UsuarioId = (Guid?)null },
-            new { Id = 2, CategoriaId = 1, Apelido = "almoco", UsuarioId = (Guid?)null },
-            new { Id = 3, CategoriaId = 1, Apelido = "janta", UsuarioId = (Guid?)null },
-            new { Id = 4, CategoriaId = 1, Apelido = "lanche", UsuarioId = (Guid?)null },
-            new { Id = 5, CategoriaId = 1, Apelido = "ifood", UsuarioId = (Guid?)null },
-            new { Id = 6, CategoriaId = 1, Apelido = "restaurante", UsuarioId = (Guid?)null },
-            new { Id = 7, CategoriaId = 1, Apelido = "cafe", UsuarioId = (Guid?)null },
-            new { Id = 8, CategoriaId = 1, Apelido = "padaria", UsuarioId = (Guid?)null },
-            // Transporte
-            new { Id = 9, CategoriaId = 2, Apelido = "uber", UsuarioId = (Guid?)null },
-            new { Id = 10, CategoriaId = 2, Apelido = "onibus", UsuarioId = (Guid?)null },
-            new { Id = 11, CategoriaId = 2, Apelido = "99", UsuarioId = (Guid?)null },
-            new { Id = 12, CategoriaId = 2, Apelido = "taxi", UsuarioId = (Guid?)null },
-            new { Id = 13, CategoriaId = 2, Apelido = "passagem", UsuarioId = (Guid?)null },
-            new { Id = 14, CategoriaId = 2, Apelido = "metro", UsuarioId = (Guid?)null },
-            // Moradia
-            new { Id = 15, CategoriaId = 3, Apelido = "aluguel", UsuarioId = (Guid?)null },
-            new { Id = 16, CategoriaId = 3, Apelido = "condominio", UsuarioId = (Guid?)null },
-            new { Id = 17, CategoriaId = 3, Apelido = "luz", UsuarioId = (Guid?)null },
-            new { Id = 18, CategoriaId = 3, Apelido = "agua", UsuarioId = (Guid?)null },
-            new { Id = 19, CategoriaId = 3, Apelido = "internet", UsuarioId = (Guid?)null },
-            new { Id = 20, CategoriaId = 3, Apelido = "energia", UsuarioId = (Guid?)null },
-            new { Id = 21, CategoriaId = 3, Apelido = "gas", UsuarioId = (Guid?)null },
-            new { Id = 22, CategoriaId = 3, Apelido = "iptu", UsuarioId = (Guid?)null },
-            // Saude
-            new { Id = 23, CategoriaId = 4, Apelido = "remedio", UsuarioId = (Guid?)null },
-            new { Id = 24, CategoriaId = 4, Apelido = "farmacia", UsuarioId = (Guid?)null },
-            new { Id = 25, CategoriaId = 4, Apelido = "medico", UsuarioId = (Guid?)null },
-            new { Id = 26, CategoriaId = 4, Apelido = "consulta", UsuarioId = (Guid?)null },
-            new { Id = 27, CategoriaId = 4, Apelido = "dentista", UsuarioId = (Guid?)null },
-            new { Id = 28, CategoriaId = 4, Apelido = "exame", UsuarioId = (Guid?)null },
-            // Educacao
-            new { Id = 29, CategoriaId = 5, Apelido = "curso", UsuarioId = (Guid?)null },
-            new { Id = 30, CategoriaId = 5, Apelido = "livro", UsuarioId = (Guid?)null },
-            new { Id = 31, CategoriaId = 5, Apelido = "faculdade", UsuarioId = (Guid?)null },
-            new { Id = 32, CategoriaId = 5, Apelido = "escola", UsuarioId = (Guid?)null },
-            // Lazer
-            new { Id = 33, CategoriaId = 6, Apelido = "cinema", UsuarioId = (Guid?)null },
-            new { Id = 34, CategoriaId = 6, Apelido = "netflix", UsuarioId = (Guid?)null },
-            new { Id = 35, CategoriaId = 6, Apelido = "spotify", UsuarioId = (Guid?)null },
-            new { Id = 36, CategoriaId = 6, Apelido = "jogo", UsuarioId = (Guid?)null },
-            new { Id = 37, CategoriaId = 6, Apelido = "bar", UsuarioId = (Guid?)null },
-            new { Id = 38, CategoriaId = 6, Apelido = "festa", UsuarioId = (Guid?)null },
-            new { Id = 39, CategoriaId = 6, Apelido = "viagem", UsuarioId = (Guid?)null },
-            // Vestuario
-            new { Id = 40, CategoriaId = 7, Apelido = "roupa", UsuarioId = (Guid?)null },
-            new { Id = 41, CategoriaId = 7, Apelido = "calcado", UsuarioId = (Guid?)null },
-            new { Id = 42, CategoriaId = 7, Apelido = "tenis", UsuarioId = (Guid?)null },
-            new { Id = 43, CategoriaId = 7, Apelido = "shein", UsuarioId = (Guid?)null },
-            // Combustivel
-            new { Id = 44, CategoriaId = 8, Apelido = "gasolina", UsuarioId = (Guid?)null },
-            new { Id = 45, CategoriaId = 8, Apelido = "etanol", UsuarioId = (Guid?)null },
-            new { Id = 46, CategoriaId = 8, Apelido = "combustivel", UsuarioId = (Guid?)null },
-            new { Id = 47, CategoriaId = 8, Apelido = "posto", UsuarioId = (Guid?)null },
-            new { Id = 48, CategoriaId = 8, Apelido = "diesel", UsuarioId = (Guid?)null },
-            // Assinaturas
-            new { Id = 49, CategoriaId = 9, Apelido = "assinatura", UsuarioId = (Guid?)null },
-            new { Id = 50, CategoriaId = 9, Apelido = "mensalidade", UsuarioId = (Guid?)null },
-            new { Id = 51, CategoriaId = 9, Apelido = "academia", UsuarioId = (Guid?)null },
-            new { Id = 52, CategoriaId = 9, Apelido = "streaming", UsuarioId = (Guid?)null },
-            // Mercado
-            new { Id = 53, CategoriaId = 10, Apelido = "mercado", UsuarioId = (Guid?)null },
-            new { Id = 54, CategoriaId = 10, Apelido = "supermercado", UsuarioId = (Guid?)null },
-            new { Id = 55, CategoriaId = 10, Apelido = "feira", UsuarioId = (Guid?)null },
-            new { Id = 56, CategoriaId = 10, Apelido = "hortifruti", UsuarioId = (Guid?)null },
-            new { Id = 57, CategoriaId = 10, Apelido = "acougue", UsuarioId = (Guid?)null },
-            // Pets
-            new { Id = 58, CategoriaId = 11, Apelido = "racao", UsuarioId = (Guid?)null },
-            new { Id = 59, CategoriaId = 11, Apelido = "veterinario", UsuarioId = (Guid?)null },
-            new { Id = 60, CategoriaId = 11, Apelido = "petshop", UsuarioId = (Guid?)null },
-            // Beleza
-            new { Id = 61, CategoriaId = 12, Apelido = "cabelo", UsuarioId = (Guid?)null },
-            new { Id = 62, CategoriaId = 12, Apelido = "unha", UsuarioId = (Guid?)null },
-            new { Id = 63, CategoriaId = 12, Apelido = "salao", UsuarioId = (Guid?)null },
-            new { Id = 64, CategoriaId = 12, Apelido = "barbearia", UsuarioId = (Guid?)null },
-            // Cartao de Credito
-            new { Id = 65, CategoriaId = 13, Apelido = "fatura", UsuarioId = (Guid?)null },
-            new { Id = 66, CategoriaId = 13, Apelido = "cartao", UsuarioId = (Guid?)null },
-            // Investimentos
-            new { Id = 67, CategoriaId = 14, Apelido = "acao", UsuarioId = (Guid?)null },
-            new { Id = 68, CategoriaId = 14, Apelido = "acoes", UsuarioId = (Guid?)null },
-            new { Id = 69, CategoriaId = 14, Apelido = "fii", UsuarioId = (Guid?)null },
-            new { Id = 70, CategoriaId = 14, Apelido = "cdb", UsuarioId = (Guid?)null },
-            new { Id = 71, CategoriaId = 14, Apelido = "tesouro", UsuarioId = (Guid?)null },
-            new { Id = 72, CategoriaId = 14, Apelido = "cripto", UsuarioId = (Guid?)null },
-            new { Id = 73, CategoriaId = 14, Apelido = "bitcoin", UsuarioId = (Guid?)null },
-            new { Id = 74, CategoriaId = 14, Apelido = "poupanca", UsuarioId = (Guid?)null },
-            // Outros
-            new { Id = 75, CategoriaId = 15, Apelido = "presente", UsuarioId = (Guid?)null },
-            new { Id = 76, CategoriaId = 15, Apelido = "doacao", UsuarioId = (Guid?)null },
-            new { Id = 77, CategoriaId = 15, Apelido = "imposto", UsuarioId = (Guid?)null },
-            new { Id = 78, CategoriaId = 15, Apelido = "multa", UsuarioId = (Guid?)null }
+            new { Id = 1, CategoriaId = 1, Apelido = "comida", UsuarioId = (int?)null },
+            new { Id = 2, CategoriaId = 1, Apelido = "almoco", UsuarioId = (int?)null },
+            new { Id = 3, CategoriaId = 1, Apelido = "janta", UsuarioId = (int?)null },
+            new { Id = 4, CategoriaId = 1, Apelido = "lanche", UsuarioId = (int?)null },
+            new { Id = 5, CategoriaId = 1, Apelido = "ifood", UsuarioId = (int?)null },
+            new { Id = 6, CategoriaId = 1, Apelido = "restaurante", UsuarioId = (int?)null },
+            new { Id = 7, CategoriaId = 1, Apelido = "cafe", UsuarioId = (int?)null },
+            new { Id = 8, CategoriaId = 1, Apelido = "padaria", UsuarioId = (int?)null },
+            new { Id = 9, CategoriaId = 2, Apelido = "uber", UsuarioId = (int?)null },
+            new { Id = 10, CategoriaId = 2, Apelido = "onibus", UsuarioId = (int?)null },
+            new { Id = 11, CategoriaId = 2, Apelido = "99", UsuarioId = (int?)null },
+            new { Id = 12, CategoriaId = 2, Apelido = "taxi", UsuarioId = (int?)null },
+            new { Id = 13, CategoriaId = 2, Apelido = "passagem", UsuarioId = (int?)null },
+            new { Id = 14, CategoriaId = 2, Apelido = "metro", UsuarioId = (int?)null },
+            new { Id = 15, CategoriaId = 3, Apelido = "aluguel", UsuarioId = (int?)null },
+            new { Id = 16, CategoriaId = 3, Apelido = "condominio", UsuarioId = (int?)null },
+            new { Id = 17, CategoriaId = 3, Apelido = "luz", UsuarioId = (int?)null },
+            new { Id = 18, CategoriaId = 3, Apelido = "agua", UsuarioId = (int?)null },
+            new { Id = 19, CategoriaId = 3, Apelido = "internet", UsuarioId = (int?)null },
+            new { Id = 20, CategoriaId = 3, Apelido = "energia", UsuarioId = (int?)null },
+            new { Id = 21, CategoriaId = 3, Apelido = "gas", UsuarioId = (int?)null },
+            new { Id = 22, CategoriaId = 3, Apelido = "iptu", UsuarioId = (int?)null },
+            new { Id = 23, CategoriaId = 4, Apelido = "remedio", UsuarioId = (int?)null },
+            new { Id = 24, CategoriaId = 4, Apelido = "farmacia", UsuarioId = (int?)null },
+            new { Id = 25, CategoriaId = 4, Apelido = "medico", UsuarioId = (int?)null },
+            new { Id = 26, CategoriaId = 4, Apelido = "consulta", UsuarioId = (int?)null },
+            new { Id = 27, CategoriaId = 4, Apelido = "dentista", UsuarioId = (int?)null },
+            new { Id = 28, CategoriaId = 4, Apelido = "exame", UsuarioId = (int?)null },
+            new { Id = 29, CategoriaId = 5, Apelido = "curso", UsuarioId = (int?)null },
+            new { Id = 30, CategoriaId = 5, Apelido = "livro", UsuarioId = (int?)null },
+            new { Id = 31, CategoriaId = 5, Apelido = "faculdade", UsuarioId = (int?)null },
+            new { Id = 32, CategoriaId = 5, Apelido = "escola", UsuarioId = (int?)null },
+            new { Id = 33, CategoriaId = 6, Apelido = "cinema", UsuarioId = (int?)null },
+            new { Id = 34, CategoriaId = 6, Apelido = "netflix", UsuarioId = (int?)null },
+            new { Id = 35, CategoriaId = 6, Apelido = "spotify", UsuarioId = (int?)null },
+            new { Id = 36, CategoriaId = 6, Apelido = "jogo", UsuarioId = (int?)null },
+            new { Id = 37, CategoriaId = 6, Apelido = "bar", UsuarioId = (int?)null },
+            new { Id = 38, CategoriaId = 6, Apelido = "festa", UsuarioId = (int?)null },
+            new { Id = 39, CategoriaId = 6, Apelido = "viagem", UsuarioId = (int?)null },
+            new { Id = 40, CategoriaId = 7, Apelido = "roupa", UsuarioId = (int?)null },
+            new { Id = 41, CategoriaId = 7, Apelido = "calcado", UsuarioId = (int?)null },
+            new { Id = 42, CategoriaId = 7, Apelido = "tenis", UsuarioId = (int?)null },
+            new { Id = 43, CategoriaId = 7, Apelido = "shein", UsuarioId = (int?)null },
+            new { Id = 44, CategoriaId = 8, Apelido = "gasolina", UsuarioId = (int?)null },
+            new { Id = 45, CategoriaId = 8, Apelido = "etanol", UsuarioId = (int?)null },
+            new { Id = 46, CategoriaId = 8, Apelido = "combustivel", UsuarioId = (int?)null },
+            new { Id = 47, CategoriaId = 8, Apelido = "posto", UsuarioId = (int?)null },
+            new { Id = 48, CategoriaId = 8, Apelido = "diesel", UsuarioId = (int?)null },
+            new { Id = 49, CategoriaId = 9, Apelido = "assinatura", UsuarioId = (int?)null },
+            new { Id = 50, CategoriaId = 9, Apelido = "mensalidade", UsuarioId = (int?)null },
+            new { Id = 51, CategoriaId = 9, Apelido = "academia", UsuarioId = (int?)null },
+            new { Id = 52, CategoriaId = 9, Apelido = "streaming", UsuarioId = (int?)null },
+            new { Id = 53, CategoriaId = 10, Apelido = "mercado", UsuarioId = (int?)null },
+            new { Id = 54, CategoriaId = 10, Apelido = "supermercado", UsuarioId = (int?)null },
+            new { Id = 55, CategoriaId = 10, Apelido = "feira", UsuarioId = (int?)null },
+            new { Id = 56, CategoriaId = 10, Apelido = "hortifruti", UsuarioId = (int?)null },
+            new { Id = 57, CategoriaId = 10, Apelido = "acougue", UsuarioId = (int?)null },
+            new { Id = 58, CategoriaId = 11, Apelido = "racao", UsuarioId = (int?)null },
+            new { Id = 59, CategoriaId = 11, Apelido = "veterinario", UsuarioId = (int?)null },
+            new { Id = 60, CategoriaId = 11, Apelido = "petshop", UsuarioId = (int?)null },
+            new { Id = 61, CategoriaId = 12, Apelido = "cabelo", UsuarioId = (int?)null },
+            new { Id = 62, CategoriaId = 12, Apelido = "unha", UsuarioId = (int?)null },
+            new { Id = 63, CategoriaId = 12, Apelido = "salao", UsuarioId = (int?)null },
+            new { Id = 64, CategoriaId = 12, Apelido = "barbearia", UsuarioId = (int?)null },
+            new { Id = 65, CategoriaId = 13, Apelido = "fatura", UsuarioId = (int?)null },
+            new { Id = 66, CategoriaId = 13, Apelido = "cartao", UsuarioId = (int?)null },
+            new { Id = 67, CategoriaId = 14, Apelido = "acao", UsuarioId = (int?)null },
+            new { Id = 68, CategoriaId = 14, Apelido = "acoes", UsuarioId = (int?)null },
+            new { Id = 69, CategoriaId = 14, Apelido = "fii", UsuarioId = (int?)null },
+            new { Id = 70, CategoriaId = 14, Apelido = "cdb", UsuarioId = (int?)null },
+            new { Id = 71, CategoriaId = 14, Apelido = "tesouro", UsuarioId = (int?)null },
+            new { Id = 72, CategoriaId = 14, Apelido = "cripto", UsuarioId = (int?)null },
+            new { Id = 73, CategoriaId = 14, Apelido = "bitcoin", UsuarioId = (int?)null },
+            new { Id = 74, CategoriaId = 14, Apelido = "poupanca", UsuarioId = (int?)null },
+            new { Id = 75, CategoriaId = 15, Apelido = "presente", UsuarioId = (int?)null },
+            new { Id = 76, CategoriaId = 15, Apelido = "doacao", UsuarioId = (int?)null },
+            new { Id = 77, CategoriaId = 15, Apelido = "imposto", UsuarioId = (int?)null },
+            new { Id = 78, CategoriaId = 15, Apelido = "multa", UsuarioId = (int?)null }
         );
     }
 }

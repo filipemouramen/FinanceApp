@@ -1,4 +1,4 @@
-﻿using FinanceApp.Application.DTOs.Orcamentos;
+using FinanceApp.Application.DTOs.Orcamentos;
 using FinanceApp.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,11 +25,11 @@ public class OrcamentosController : BaseController
     public async Task<IActionResult> Criar([FromBody] CriarOrcamentoRequest request)
         => RespostaDe(await _service.CriarAsync(UsuarioIdAtual, request));
 
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Atualizar(Guid id, [FromBody] AtualizarOrcamentoRequest request)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Atualizar(int id, [FromBody] AtualizarOrcamentoRequest request)
         => RespostaDe(await _service.AtualizarAsync(UsuarioIdAtual, id, request));
 
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Excluir(Guid id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Excluir(int id)
         => RespostaDe(await _service.ExcluirAsync(UsuarioIdAtual, id));
 }

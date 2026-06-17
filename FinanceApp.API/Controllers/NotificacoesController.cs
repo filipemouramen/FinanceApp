@@ -1,4 +1,4 @@
-﻿using FinanceApp.Application.Interfaces;
+using FinanceApp.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,22 +17,22 @@ public class NotificacoesController : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Listar([FromQuery] bool? apenasNaoLidas = null)
-        => RespostaDe(await _service.ListarAsync(UsuarioIdAtual, apenasNaoLidas));
+    public async Task<IActionResult> Listar([FromQuery] bool? apenasNaoLidas = null, [FromQuery] int pagina = 1, [FromQuery] int tamanhoPagina = 20)
+        => RespostaDe(await _service.ListarAsync(UsuarioIdAtual, apenasNaoLidas, pagina, tamanhoPagina));
 
     [HttpGet("contador")]
     public async Task<IActionResult> Contar()
-        => RespostaDe(await _service.ContarAsync(UsuarioIdAtual));
+        => RespostaDe(await _service.ContarNaoLidasAsync(UsuarioIdAtual));
 
-    [HttpPut("{id:guid}/lida")]
-    public async Task<IActionResult> MarcarComoLida(Guid id)
+    [HttpPut("{id:int}/lida")]
+    public async Task<IActionResult> MarcarComoLida(int id)
         => RespostaDe(await _service.MarcarComoLidaAsync(UsuarioIdAtual, id));
 
     [HttpPut("marcar-todas-lidas")]
     public async Task<IActionResult> MarcarTodasComoLidas()
         => RespostaDe(await _service.MarcarTodasComoLidasAsync(UsuarioIdAtual));
 
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Excluir(Guid id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Excluir(int id)
         => RespostaDe(await _service.ExcluirAsync(UsuarioIdAtual, id));
 }

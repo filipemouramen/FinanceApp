@@ -1,20 +1,13 @@
-﻿using FinanceApp.Application.DTOs.Metas;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FinanceApp.Application.DTOs.Metas;
 
-namespace FinanceApp.Application.Interfaces
+namespace FinanceApp.Application.Interfaces;
+
+public interface IMetaService
 {
-    public interface IMetaService
-    {
-        Task<Resultado<List<MetaResponse>>> ListarAsync(Guid usuarioId);
-        Task<Resultado<MetaResponse>> ObterPorIdAsync(Guid usuarioId, Guid metaId);
-        Task<Resultado<MetaResponse>> CriarAsync(Guid usuarioId, CriarMetaRequest request);
-        Task<Resultado<MetaResponse>> AtualizarAsync(Guid usuarioId, Guid metaId, AtualizarMetaRequest request);
-        Task<Resultado<bool>> ExcluirAsync(Guid usuarioId, Guid metaId);
-        Task<Resultado<MetaResponse>> AdicionarLancamentoAsync(Guid usuarioId, Guid metaId, LancamentoMetaRequest request);
-    }
-
+    Task<Resultado<List<MetaResponse>>> ListarAsync(int usuarioId);
+    Task<Resultado<MetaResponse>> ObterPorIdAsync(int usuarioId, int metaId);
+    Task<Resultado<MetaResponse>> CriarAsync(int usuarioId, CriarMetaRequest request);
+    Task<Resultado<MetaResponse>> AtualizarAsync(int usuarioId, int metaId, AtualizarMetaRequest request);
+    Task<Resultado<bool>> ExcluirAsync(int usuarioId, int metaId);
+    Task<Resultado<MetaResponse>> AdicionarLancamentoAsync(int usuarioId, int metaId, LancamentoMetaRequest request);
 }

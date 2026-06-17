@@ -1,6 +1,17 @@
+// ===== ENUMS =====
+export type TipoTransacao = 'DESPESA' | 'RECEITA';
+export type StatusTransacao = 'EFETIVADA' | 'PENDENTE' | 'VENCIDA' | 'CANCELADA';
+export type TipoNotificacao =
+  | 'ALERTA_ORCAMENTO_80'
+  | 'ALERTA_ORCAMENTO_100'
+  | 'META_ATINGIDA'
+  | 'FATURA_FECHADA'
+  | 'RECORRENCIA_VENCENDO'
+  | 'DICA';
+
 // ===== AUTH =====
 export interface UsuarioResponse {
-  id: string;
+  id: number;
   nomeCompleto: string;
   email: string;
   telefoneWhatsApp?: string;
@@ -24,23 +35,25 @@ export interface Resultado<T> {
 
 // ===== TRANSACOES =====
 export interface TransacaoResponse {
-  id: string;
+  id: number;
   categoriaId: number;
   nomeCategoria: string;
   iconeCategoria: string;
   corCategoria: string;
-  contaId?: string;
+  contaId?: number;
   nomeConta?: string;
   formaPagamentoId?: number;
   nomeFormaPagamento?: string;
-  cartaoCreditoId?: string;
+  cartaoCreditoId?: number;
   nomeCartaoCredito?: string;
+  transferenciasContaId?: number;
+  parcelamentoId?: number;
   valor: number;
-  tipo: string;
+  tipo: TipoTransacao;
   descricao?: string;
   dataTransacao: string;
   origem: string;
-  status: string;
+  status: StatusTransacao;
   atrasada: boolean;
   observacoes?: string;
   recorrente: boolean;
@@ -65,14 +78,15 @@ export interface CategoriaResponse {
   nome: string;
   icone: string;
   cor: string;
-  tipo: string;
+  tipo: TipoTransacao;
   padrao: boolean;
+  editavel: boolean;
   totalTransacoes: number;
 }
 
 // ===== CONTAS =====
 export interface ContaResponse {
-  id: string;
+  id: number;
   nome: string;
   tipoConta: string;
   banco?: string;
@@ -82,13 +96,16 @@ export interface ContaResponse {
   saldoAtual: number;
   principal: boolean;
   ativo: boolean;
+  temCartaoVinculado: boolean;
   criadoEm: string;
 }
 
 export interface TransferenciaResponse {
-  id: string;
-  contaOrigem: string;
-  contaDestino: string;
+  id: number;
+  contaOrigemId: number;
+  contaDestinoId: number;
+  nomeContaOrigem: string;
+  nomeContaDestino: string;
   valor: number;
   descricao?: string;
   dataTransferencia: string;
@@ -96,29 +113,31 @@ export interface TransferenciaResponse {
 
 // ===== CARTOES =====
 export interface CartaoCreditoResponse {
-  id: string;
+  id: number;
   nome: string;
   bandeira?: string;
   ultimosDigitos?: string;
-  limite: number;
+  limiteTotal: number;
   limiteDisponivel: number;
   limiteUtilizado: number;
   percentualUtilizado: number;
   diaFechamento: number;
   diaVencimento: number;
   cor: string;
+  contaId?: number;
   nomeConta?: string;
   ativo: boolean;
 }
 
 export interface FaturaCartaoResponse {
-  id: string;
-  cartaoCreditoId: string;
+  id: number;
+  cartaoCreditoId: number;
   nomeCartao: string;
   mesReferencia: number;
   anoReferencia: number;
   dataFechamento: string;
-  dataVencimento: string;
+  dataVencimento?: string;
+  dataPagamento?: string;
   valorTotal: number;
   valorPago: number;
   valorRestante: number;
@@ -127,7 +146,7 @@ export interface FaturaCartaoResponse {
 }
 
 export interface TransacaoFaturaResponse {
-  id: string;
+  id: number;
   descricao?: string;
   nomeCategoria: string;
   corCategoria: string;
@@ -139,7 +158,7 @@ export interface TransacaoFaturaResponse {
 
 // ===== ORCAMENTOS =====
 export interface OrcamentoResponse {
-  id: string;
+  id: number;
   categoriaId: number;
   nomeCategoria: string;
   iconeCategoria: string;
@@ -157,7 +176,7 @@ export interface OrcamentoResponse {
 
 // ===== METAS =====
 export interface MetaResponse {
-  id: string;
+  id: number;
   titulo: string;
   valorAlvo: number;
   valorAtual: number;
@@ -173,7 +192,7 @@ export interface MetaResponse {
 }
 
 export interface LancamentoMetaResponse {
-  id: string;
+  id: number;
   valor: number;
   observacoes?: string;
   criadoEm: string;
@@ -189,6 +208,7 @@ export interface DashboardResponse {
   metas: MetaResumoResponse[];
   proximasFaturas: FaturaResumoResponse[];
   contas: ContaSaldoResponse[];
+  totalTransferencias?: number;
 }
 
 export interface ResumoFinanceiroResponse {
@@ -222,18 +242,20 @@ export interface BalancoMensalResponse {
 }
 
 export interface TransacaoRecenteResponse {
-  id: string;
+  id: number;
   descricao?: string;
   nomeCategoria: string;
   iconeCategoria: string;
   corCategoria: string;
   valor: number;
-  tipo: string;
+  tipo: TipoTransacao;
+  status: StatusTransacao;
   origem: string;
   dataTransacao: string;
 }
 
 export interface OrcamentoResumoResponse {
+  id: number;
   nomeCategoria: string;
   iconeCategoria: string;
   corCategoria: string;
@@ -244,7 +266,7 @@ export interface OrcamentoResumoResponse {
 }
 
 export interface MetaResumoResponse {
-  id: string;
+  id: number;
   titulo: string;
   valorAlvo: number;
   valorAtual: number;
@@ -254,7 +276,7 @@ export interface MetaResumoResponse {
 }
 
 export interface FaturaResumoResponse {
-  id: string;
+  id: number;
   nomeCartao: string;
   corCartao: string;
   valorTotal: number;
@@ -265,7 +287,7 @@ export interface FaturaResumoResponse {
 }
 
 export interface ContaSaldoResponse {
-  id: string;
+  id: number;
   nome: string;
   banco?: string;
   cor: string;
@@ -275,14 +297,26 @@ export interface ContaSaldoResponse {
 
 // ===== NOTIFICACOES =====
 export interface NotificacaoResponse {
-  id: string;
+  id: number;
   titulo: string;
   mensagem: string;
-  tipo: string;
+  tipo: TipoNotificacao;
   lida: boolean;
-  entidadeRelacionadaId?: string;
+  entidadeRelacionadaId?: number;
   criadoEm: string;
   tempoAtras: string;
+}
+
+export interface ListaNotificacoesResponse {
+  totalNaoLidas: number;
+  pagina: number;
+  tamanhoPagina: number;
+  totalItens: number;
+  itens: NotificacaoResponse[];
+}
+
+export interface ContadorNotificacoesResponse {
+  count: number;
 }
 
 // ===== CONFIGURACOES =====

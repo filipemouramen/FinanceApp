@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme/colors';
+import { useTheme } from '../../theme/useTheme';
+import { LightColors, Spacing, FontSize, BorderRadius } from '../../theme/colors';
 
 function formatarTelefone(valor: string): string {
   const numeros = valor.replace(/\D/g, '');
@@ -28,6 +29,7 @@ function limparTelefone(valor: string): string {
 
 export default function RegistroScreen({ navigation }: any) {
   const { registrar } = useAuth();
+  const { colors } = useTheme();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -36,6 +38,8 @@ export default function RegistroScreen({ navigation }: any) {
   const [carregando, setCarregando] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
+  const [aceitouTermos, setAceitouTermos] = useState(false);
+  const styles = getStyles(colors);
 
   function handleTelefoneChange(texto: string) {
     const numeros = texto.replace(/\D/g, '');
@@ -47,6 +51,11 @@ export default function RegistroScreen({ navigation }: any) {
   async function handleRegistro() {
     if (!nome.trim() || !email.trim() || !senha || !confirmarSenha) {
       Alert.alert('Atenção', 'Preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    if (!aceitouTermos) {
+      Alert.alert('Atenção', 'Você deve aceitar os Termos de Uso e a Política de Privacidade para criar uma conta.');
       return;
     }
 
@@ -85,7 +94,7 @@ export default function RegistroScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.voltarBotao}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.titulo}>Criar conta</Text>
           <Text style={styles.subtitulo}>Comece a controlar suas finanças!</Text>
@@ -95,11 +104,11 @@ export default function RegistroScreen({ navigation }: any) {
           {/* Nome */}
           <Text style={styles.label}>Nome completo *</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="person-outline" size={20} color={Colors.textMuted} style={styles.inputIcone} />
+            <Ionicons name="person-outline" size={20} color={colors.textMuted} style={styles.inputIcone} />
             <TextInput
               style={styles.inputComIcone}
               placeholder="Seu nome completo"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={nome}
               onChangeText={setNome}
             />
@@ -108,11 +117,11 @@ export default function RegistroScreen({ navigation }: any) {
           {/* Email */}
           <Text style={styles.label}>E-mail *</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.inputIcone} />
+            <Ionicons name="mail-outline" size={20} color={colors.textMuted} style={styles.inputIcone} />
             <TextInput
               style={styles.inputComIcone}
               placeholder="seu@email.com"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -128,7 +137,7 @@ export default function RegistroScreen({ navigation }: any) {
             <TextInput
               style={styles.inputComIcone}
               placeholder="(00) 00000-0000"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               keyboardType="phone-pad"
               value={telefone}
               onChangeText={handleTelefoneChange}
@@ -139,11 +148,11 @@ export default function RegistroScreen({ navigation }: any) {
           {/* Senha */}
           <Text style={styles.label}>Senha *</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcone} />
+            <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} style={styles.inputIcone} />
             <TextInput
               style={styles.inputComIcone}
               placeholder="Mínimo 6 caracteres"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               secureTextEntry={!mostrarSenha}
               value={senha}
               onChangeText={setSenha}
@@ -152,7 +161,7 @@ export default function RegistroScreen({ navigation }: any) {
               <Ionicons
                 name={mostrarSenha ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color={Colors.textMuted}
+                color={colors.textMuted}
               />
             </TouchableOpacity>
           </View>
@@ -160,11 +169,11 @@ export default function RegistroScreen({ navigation }: any) {
           {/* Confirmar Senha */}
           <Text style={styles.label}>Confirmar senha *</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcone} />
+            <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} style={styles.inputIcone} />
             <TextInput
               style={styles.inputComIcone}
               placeholder="Repita a senha"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               secureTextEntry={!mostrarConfirmar}
               value={confirmarSenha}
               onChangeText={setConfirmarSenha}
@@ -173,16 +182,34 @@ export default function RegistroScreen({ navigation }: any) {
               <Ionicons
                 name={mostrarConfirmar ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color={Colors.textMuted}
+                color={colors.textMuted}
               />
             </TouchableOpacity>
           </View>
 
+          {/* Consentimento LGPD */}
+          <TouchableOpacity
+            style={styles.termosContainer}
+            onPress={() => setAceitouTermos(!aceitouTermos)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.checkbox, aceitouTermos && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+              {aceitouTermos && <Ionicons name="checkmark" size={14} color="#FFF" />}
+            </View>
+            <Text style={styles.termosTexto}>
+              Li e aceito os{' '}
+              <Text style={styles.termosLink}>Termos de Uso</Text>
+              {' '}e a{' '}
+              <Text style={styles.termosLink}>Política de Privacidade</Text>
+              , incluindo o tratamento dos meus dados pessoais conforme a LGPD.
+            </Text>
+          </TouchableOpacity>
+
           {/* Botão Criar */}
           <TouchableOpacity
-            style={[styles.botao, carregando && styles.botaoDisabled]}
+            style={[styles.botao, (carregando || !aceitouTermos) && styles.botaoDisabled]}
             onPress={handleRegistro}
-            disabled={carregando}
+            disabled={carregando || !aceitouTermos}
             activeOpacity={0.8}
           >
             {carregando ? (
@@ -190,7 +217,7 @@ export default function RegistroScreen({ navigation }: any) {
             ) : (
               <View style={styles.botaoConteudo}>
                 <Text style={styles.botaoTexto}>Criar conta</Text>
-                <Ionicons name="arrow-forward" size={20} color={Colors.textWhite} />
+                <Ionicons name="arrow-forward" size={20} color={colors.textWhite} />
               </View>
             )}
           </TouchableOpacity>
@@ -209,10 +236,10 @@ export default function RegistroScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: typeof LightColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   scroll: {
     flexGrow: 1,
@@ -226,7 +253,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.md,
@@ -234,15 +261,15 @@ const styles = StyleSheet.create({
   titulo: {
     fontSize: FontSize.xxl,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   subtitulo: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: Spacing.xs,
   },
   form: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     shadowColor: '#000',
@@ -254,7 +281,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSize.sm,
     fontWeight: '600',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: Spacing.xs,
     marginTop: Spacing.md,
     textTransform: 'uppercase',
@@ -263,10 +290,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     borderRadius: BorderRadius.sm,
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   inputIcone: {
     paddingLeft: Spacing.md,
@@ -279,10 +306,37 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.md,
     fontSize: FontSize.lg,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
+  },
+  termosContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: Spacing.lg,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  termosTexto: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  termosLink: {
+    color: colors.primary,
+    fontWeight: '600',
   },
   botao: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.sm,
     padding: Spacing.md + 2,
     alignItems: 'center',
@@ -297,7 +351,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   botaoTexto: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     fontSize: FontSize.lg,
     fontWeight: '700',
   },
@@ -308,10 +362,10 @@ const styles = StyleSheet.create({
   },
   linkTexto: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   linkDestaque: {
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '600',
   },
 });

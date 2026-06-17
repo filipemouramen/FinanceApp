@@ -1,4 +1,4 @@
-﻿namespace FinanceApp.Domain.Enums;
+namespace FinanceApp.Domain.Enums;
 
 public enum TipoTransacao
 {
@@ -52,9 +52,10 @@ public enum FinalidadeCodigo
 
 public enum TipoNotificacao
 {
-    ALERTA_ORCAMENTO,
+    ALERTA_ORCAMENTO_80,
+    ALERTA_ORCAMENTO_100,
     META_ATINGIDA,
+    FATURA_FECHADA,
     RECORRENCIA_VENCENDO,
-    FATURA_VENCENDO,
     DICA
 }

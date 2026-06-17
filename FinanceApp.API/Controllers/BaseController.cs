@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using FinanceApp.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,8 +8,8 @@ namespace FinanceApp.API.Controllers;
 [Route("api/[controller]")]
 public abstract class BaseController : ControllerBase
 {
-    protected Guid UsuarioIdAtual =>
-        Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+    protected int UsuarioIdAtual =>
+        int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new UnauthorizedAccessException("Usuário não autenticado."));
 
     protected IActionResult RespostaDe<T>(Resultado<T> resultado)
@@ -28,6 +28,7 @@ public abstract class BaseController : ControllerBase
             401 => Unauthorized(resultado),
             403 => StatusCode(403, resultado),
             404 => NotFound(resultado),
+            422 => StatusCode(422, resultado),
             423 => StatusCode(423, resultado),
             _ => BadRequest(resultado)
         };

@@ -11,9 +11,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../api/client';
-import { CategoriaResponse, ContaResponse, Resultado } from '../../types';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme/colors';
+import { CategoriaResponse, CartaoCreditoResponse, ContaResponse, Resultado, TransacaoResponse, TipoTransacao } from '../../types';
+import { LightColors, Spacing, FontSize, BorderRadius } from '../../theme/colors';
+import { useTheme } from '../../theme/useTheme';
 import { formatarMoeda } from '../../utils/formatters';
+
+function centavosParaDisplay(centavos: number): string {
+  if (centavos === 0) return '';
+  const reais = Math.floor(centavos / 100);
+  const cents = centavos % 100;
+  const reaisStr = reais.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${reaisStr},${cents.toString().padStart(2, '0')}`;
+}
 
 const FORMAS_PAGAMENTO = [
   { id: 1, nome: 'Dinheiro', icone: 'cash-outline' },
@@ -24,43 +33,63 @@ const FORMAS_PAGAMENTO = [
   { id: 6, nome: 'Transfer.', icone: 'swap-horizontal-outline' },
 ];
 
-export default function CriarTransacaoScreen({ navigation }: any) {
+export default function CriarTransacaoScreen({ navigation, route }: any) {
+  const { colors } = useTheme();
+  const transacaoParaEditar: TransacaoResponse | undefined = route?.params?.transacaoParaEditar;
+  const modoEdicao = !!transacaoParaEditar;
 
   const [categorias, setCategorias] = useState<CategoriaResponse[]>([]);
   const [contas, setContas] = useState<ContaResponse[]>([]);
+  const [cartoes, setCartoes] = useState<CartaoCreditoResponse[]>([]);
   const [carregandoDados, setCarregandoDados] = useState(true);
 
-  const [tipo, setTipo] = useState<'DESPESA' | 'RECEITA'>('DESPESA');
-  const [valor, setValor] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [categoriaId, setCategoriaId] = useState<number | null>(null);
-  const [contaId, setContaId] = useState<string | null>(null);
-  const [formaPagamentoId, setFormaPagamentoId] = useState<number>(4);
+  const [tipo, setTipo] = useState<TipoTransacao>(transacaoParaEditar?.tipo ?? 'DESPESA');
+  const initialCentavos = transacaoParaEditar ? Math.round(transacaoParaEditar.valor * 100) : 0;
+  const [valorCentavos, setValorCentavos] = useState(initialCentavos);
+  const [valorDisplay, setValorDisplay] = useState(centavosParaDisplay(initialCentavos));
+  const [descricao, setDescricao] = useState(transacaoParaEditar?.descricao ?? '');
+  const [categoriaId, setCategoriaId] = useState<number | null>(transacaoParaEditar?.categoriaId ?? null);
+  const [contaId, setContaId] = useState<number | null>(transacaoParaEditar?.contaId ?? null);
+  const [cartaoId, setCartaoId] = useState<number | null>(null);
+  const [formaPagamentoId, setFormaPagamentoId] = useState<number>(transacaoParaEditar?.formaPagamentoId ?? 4);
   const [totalParcelas, setTotalParcelas] = useState('');
   const [agendar, setAgendar] = useState(false);
   const [salvando, setSalvando] = useState(false);
+
+  const styles = getStyles(colors);
+
+  function handleValorChange(text: string) {
+    const digits = text.replace(/\D/g, '');
+    const centavos = parseInt(digits || '0', 10);
+    setValorCentavos(centavos);
+    setValorDisplay(centavosParaDisplay(centavos));
+  }
 
   useEffect(() => {
     carregarDados();
   }, []);
 
   useEffect(() => {
-    setCategoriaId(null);
+    if (!modoEdicao) setCategoriaId(null);
   }, [tipo]);
 
   async function carregarDados() {
     try {
-      const [catRes, contRes] = await Promise.all([
+      const [catRes, contRes, cartRes] = await Promise.all([
         api.get('/categorias'),
         api.get('/contas'),
+        api.get('/cartoes'),
       ]);
 
       if (catRes.data.sucesso) setCategorias(catRes.data.dados);
       if (contRes.data.sucesso) {
         setContas(contRes.data.dados);
-        const principal = contRes.data.dados.find((c: ContaResponse) => c.principal);
-        if (principal) setContaId(principal.id);
+        if (!modoEdicao && !contaId) {
+          const principal = contRes.data.dados.find((c: ContaResponse) => c.principal);
+          if (principal) setContaId(principal.id);
+        }
       }
+      if (cartRes.data.sucesso) setCartoes(cartRes.data.dados);
     } catch (error) {
       console.log('Erro ao carregar dados:', error);
     } finally {
@@ -73,7 +102,30 @@ export default function CriarTransacaoScreen({ navigation }: any) {
   }
 
   async function handleSalvar() {
-    if (!valor || parseFloat(valor) <= 0) {
+    if (modoEdicao && transacaoParaEditar?.parcelamentoId) {
+      Alert.alert(
+        'Transação parcelada',
+        'Esta transação faz parte de um parcelamento e não pode ser editada individualmente.',
+        [
+          { text: 'Fechar', style: 'cancel' },
+          {
+            text: 'Cancelar parcelamento',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await api.delete(`/transacoes/parcelamento/${transacaoParaEditar.parcelamentoId}`);
+                Alert.alert('Parcelamento cancelado', '', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+              } catch {
+                Alert.alert('Erro', 'Não foi possível cancelar o parcelamento.');
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    if (valorCentavos <= 0) {
       Alert.alert('Atenção', 'Informe um valor maior que zero.');
       return;
     }
@@ -85,27 +137,38 @@ export default function CriarTransacaoScreen({ navigation }: any) {
 
     setSalvando(true);
     try {
-      const parcelas = parseInt(totalParcelas);
+      let resultado: Resultado<any>;
 
-      const body: any = {
-        categoriaId,
-        contaId,
-        formaPagamentoId,
-        valor: parseFloat(valor),
-        tipo,
-        descricao: descricao.trim() || null,
-        agendar,
-      };
-
-      if (parcelas >= 2) {
-        body.totalParcelas = parcelas;
+      if (modoEdicao) {
+        const body: any = {
+          categoriaId,
+          contaId,
+          formaPagamentoId,
+          valor: valorCentavos / 100,
+          descricao: descricao.trim() || null,
+        };
+        const response = await api.put(`/transacoes/${transacaoParaEditar!.id}`, body);
+        resultado = response.data;
+      } else {
+        const parcelas = parseInt(totalParcelas);
+        const body: any = {
+          categoriaId,
+          contaId,
+          formaPagamentoId,
+          valor: valorCentavos / 100,
+          tipo,
+          descricao: descricao.trim() || null,
+          agendar,
+        };
+        if (parcelas >= 2) body.totalParcelas = parcelas;
+        if (cartaoId) body.cartaoId = cartaoId;
+        const response = await api.post('/transacoes', body);
+        resultado = response.data;
       }
 
-      const response = await api.post('/transacoes', body);
-      const resultado: Resultado<any> = response.data;
-
       if (resultado.sucesso) {
-        Alert.alert('Sucesso', resultado.mensagem || 'Transação registrada!', [
+        const msg = modoEdicao ? 'Transação atualizada!' : 'Transação registrada!';
+        Alert.alert('Sucesso', resultado.mensagem || msg, [
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
       } else {
@@ -121,7 +184,7 @@ export default function CriarTransacaoScreen({ navigation }: any) {
   if (carregandoDados) {
     return (
       <View style={styles.carregando}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -131,9 +194,9 @@ export default function CriarTransacaoScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={28} color={Colors.textPrimary} />
+          <Ionicons name="close" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitulo}>Nova Transação</Text>
+        <Text style={styles.headerTitulo}>{modoEdicao ? 'Editar Transação' : 'Nova Transação'}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -147,7 +210,7 @@ export default function CriarTransacaoScreen({ navigation }: any) {
             <Ionicons
               name="arrow-down-circle"
               size={20}
-              color={tipo === 'DESPESA' ? Colors.textWhite : Colors.danger}
+              color={tipo === 'DESPESA' ? colors.textWhite : colors.danger}
             />
             <Text style={[styles.toggleTexto, tipo === 'DESPESA' && styles.toggleTextoAtivo]}>
               Despesa
@@ -160,7 +223,7 @@ export default function CriarTransacaoScreen({ navigation }: any) {
             <Ionicons
               name="arrow-up-circle"
               size={20}
-              color={tipo === 'RECEITA' ? Colors.textWhite : Colors.success}
+              color={tipo === 'RECEITA' ? colors.textWhite : colors.success}
             />
             <Text style={[styles.toggleTexto, tipo === 'RECEITA' && styles.toggleTextoAtivo]}>
               Receita
@@ -172,16 +235,16 @@ export default function CriarTransacaoScreen({ navigation }: any) {
         <View style={styles.valorContainer}>
           <Text style={styles.valorLabel}>Valor</Text>
           <View style={styles.valorInputContainer}>
-            <Text style={[styles.valorPrefixo, { color: tipo === 'DESPESA' ? Colors.danger : Colors.success }]}>
+            <Text style={[styles.valorPrefixo, { color: tipo === 'DESPESA' ? colors.danger : colors.success }]}>
               R$
             </Text>
             <TextInput
-              style={[styles.valorInput, { color: tipo === 'DESPESA' ? Colors.danger : Colors.success }]}
+              style={[styles.valorInput, { color: tipo === 'DESPESA' ? colors.danger : colors.success }]}
               placeholder="0,00"
-              placeholderTextColor={Colors.textMuted}
-              keyboardType="decimal-pad"
-              value={valor}
-              onChangeText={setValor}
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+              value={valorDisplay}
+              onChangeText={handleValorChange}
             />
           </View>
         </View>
@@ -191,7 +254,7 @@ export default function CriarTransacaoScreen({ navigation }: any) {
         <TextInput
           style={styles.input}
           placeholder="Ex: Almoço, Salário, Netflix..."
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={colors.textMuted}
           value={descricao}
           onChangeText={setDescricao}
         />
@@ -227,7 +290,7 @@ export default function CriarTransacaoScreen({ navigation }: any) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriasScroll}>
           {contas.map((conta) => (
             <TouchableOpacity
-              key={conta.id}
+              key={conta.id.toString()}
               style={[
                 styles.categoriaItem,
                 contaId === conta.id && { borderColor: conta.cor, backgroundColor: conta.cor + '15' },
@@ -265,7 +328,7 @@ export default function CriarTransacaoScreen({ navigation }: any) {
                   <Ionicons
                     name={fp.icone as any}
                     size={20}
-                    color={formaPagamentoId === fp.id ? Colors.primary : Colors.textMuted}
+                    color={formaPagamentoId === fp.id ? colors.primary : colors.textMuted}
                   />
                   <Text
                     style={[
@@ -281,6 +344,33 @@ export default function CriarTransacaoScreen({ navigation }: any) {
           </>
         )}
 
+        {/* Cartão de Crédito (só quando forma = Crédito) */}
+        {tipo === 'DESPESA' && formaPagamentoId === 2 && cartoes.length > 0 && (
+          <>
+            <Text style={styles.secaoTitulo}>Cartão de crédito</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriasScroll}>
+              {cartoes.map((cartao) => (
+                <TouchableOpacity
+                  key={cartao.id}
+                  style={[
+                    styles.cartaoItem,
+                    cartaoId === cartao.id && { borderColor: cartao.cor, backgroundColor: cartao.cor + '15' },
+                  ]}
+                  onPress={() => setCartaoId(cartaoId === cartao.id ? null : cartao.id)}
+                >
+                  <View style={[styles.cartaoCor, { backgroundColor: cartao.cor }]} />
+                  <View>
+                    <Text style={[styles.cartaoNome, cartaoId === cartao.id && { color: cartao.cor, fontWeight: '700' }]} numberOfLines={1}>
+                      {cartao.nome}
+                    </Text>
+                    <Text style={styles.cartaoLimite}>{formatarMoeda(cartao.limiteDisponivel)} disponível</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
+
         {/* Parcelamento (só pra despesa) */}
         {tipo === 'DESPESA' && (
           <>
@@ -288,14 +378,14 @@ export default function CriarTransacaoScreen({ navigation }: any) {
             <TextInput
               style={styles.input}
               placeholder="Ex: 3, 6, 12 (deixe vazio pra compras à vista)"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               keyboardType="number-pad"
               value={totalParcelas}
               onChangeText={setTotalParcelas}
             />
             {parseInt(totalParcelas) >= 2 && valor && (
               <Text style={styles.parcelaInfo}>
-                {totalParcelas}x de {formatarMoeda(parseFloat(valor) / parseInt(totalParcelas))}
+                {totalParcelas}x de {formatarMoeda((valorCentavos / 100) / parseInt(totalParcelas))}
               </Text>
             )}
           </>
@@ -309,24 +399,24 @@ export default function CriarTransacaoScreen({ navigation }: any) {
           <Ionicons
             name={agendar ? 'checkbox' : 'square-outline'}
             size={24}
-            color={agendar ? Colors.primary : Colors.textMuted}
+            color={agendar ? colors.primary : colors.textMuted}
           />
           <Text style={styles.checkboxTexto}>Agendar (não debitar agora)</Text>
         </TouchableOpacity>
 
         {/* Resumo */}
-        {valor && categoriaId && (
+        {valorCentavos > 0 && categoriaId && (
           <View style={styles.resumoContainer}>
             <Text style={styles.resumoTitulo}>Resumo</Text>
             <View style={styles.resumoLinha}>
               <Text style={styles.resumoLabel}>Tipo</Text>
-              <Text style={[styles.resumoValor, { color: tipo === 'DESPESA' ? Colors.danger : Colors.success }]}>
+              <Text style={[styles.resumoValor, { color: tipo === 'DESPESA' ? colors.danger : colors.success }]}>
                 {tipo}
               </Text>
             </View>
             <View style={styles.resumoLinha}>
               <Text style={styles.resumoLabel}>Valor</Text>
-              <Text style={styles.resumoValor}>{formatarMoeda(parseFloat(valor) || 0)}</Text>
+              <Text style={styles.resumoValor}>{formatarMoeda(valorCentavos / 100)}</Text>
             </View>
             <View style={styles.resumoLinha}>
               <Text style={styles.resumoLabel}>Categoria</Text>
@@ -337,7 +427,7 @@ export default function CriarTransacaoScreen({ navigation }: any) {
             <View style={styles.resumoLinha}>
               <Text style={styles.resumoLabel}>Conta</Text>
               <Text style={styles.resumoValor}>
-                {contas.find((c) => c.id === contaId)?.nome || 'Nenhuma'}
+                {contas.find((c) => c.id === contaId)?.nome ?? 'Nenhuma'}
               </Text>
             </View>
             <View style={styles.resumoLinha}>
@@ -347,7 +437,6 @@ export default function CriarTransacaoScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* Espaço pro botão */}
         <View style={{ height: 100 }} />
       </ScrollView>
 
@@ -358,9 +447,9 @@ export default function CriarTransacaoScreen({ navigation }: any) {
           onPress={handleSalvar}
           disabled={salvando}
         >
-          <Ionicons name="checkmark-circle" size={22} color={Colors.textWhite} />
+          <Ionicons name="checkmark-circle" size={22} color={colors.textWhite} />
           <Text style={styles.botaoSalvarTexto}>
-            {salvando ? 'Salvando...' : 'Registrar transação'}
+            {salvando ? 'Salvando...' : modoEdicao ? 'Salvar Alterações' : 'Registrar transação'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -368,16 +457,13 @@ export default function CriarTransacaoScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+const getStyles = (colors: typeof LightColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   carregando: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -386,23 +472,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: 60,
     paddingBottom: Spacing.md,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
-  headerTitulo: {
-    fontSize: FontSize.xl,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  scroll: {
-    flex: 1,
-    padding: Spacing.lg,
-  },
-  // Toggle Despesa/Receita
+  headerTitulo: { fontSize: FontSize.xl, fontWeight: '700', color: colors.textPrimary },
+  scroll: { flex: 1, padding: Spacing.lg },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: Colors.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     borderRadius: BorderRadius.sm,
     padding: 4,
     marginBottom: Spacing.lg,
@@ -416,71 +494,41 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm - 2,
     gap: 6,
   },
-  toggleDespesaAtivo: {
-    backgroundColor: Colors.danger,
-  },
-  toggleReceitaAtivo: {
-    backgroundColor: Colors.success,
-  },
-  toggleTexto: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  toggleTextoAtivo: {
-    color: Colors.textWhite,
-  },
-  // Valor
-  valorContainer: {
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-  },
+  toggleDespesaAtivo: { backgroundColor: colors.danger },
+  toggleReceitaAtivo: { backgroundColor: colors.success },
+  toggleTexto: { fontSize: FontSize.md, fontWeight: '600', color: colors.textSecondary },
+  toggleTextoAtivo: { color: colors.textWhite },
+  valorContainer: { alignItems: 'center', marginBottom: Spacing.lg },
   valorLabel: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: Spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     fontWeight: '600',
   },
-  valorInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  valorPrefixo: {
-    fontSize: FontSize.title,
-    fontWeight: '700',
-    marginRight: 4,
-  },
-  valorInput: {
-    fontSize: FontSize.hero,
-    fontWeight: '800',
-    minWidth: 100,
-    textAlign: 'center',
-  },
-  // Seções
+  valorInputContainer: { flexDirection: 'row', alignItems: 'center' },
+  valorPrefixo: { fontSize: FontSize.title, fontWeight: '700', marginRight: 4 },
+  valorInput: { fontSize: FontSize.hero, fontWeight: '800', minWidth: 100, textAlign: 'center' },
   secaoTitulo: {
     fontSize: FontSize.sm,
     fontWeight: '600',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: Spacing.sm,
     marginTop: Spacing.lg,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
     fontSize: FontSize.lg,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
-  // Categorias (horizontal)
-  categoriasScroll: {
-    marginBottom: Spacing.sm,
-  },
+  categoriasScroll: { marginBottom: Spacing.sm },
   categoriaItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -488,101 +536,65 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: BorderRadius.sm,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     marginRight: 8,
     gap: 8,
   },
-  categoriaCor: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  categoriaTexto: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    fontWeight: '500',
-  },
-  // Formas de pagamento
-  formasContainer: {
+  categoriaCor: { width: 10, height: 10, borderRadius: 5 },
+  categoriaTexto: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
+  cartaoItem: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    marginRight: 8,
+    gap: 10,
+    minWidth: 140,
   },
+  cartaoCor: { width: 12, height: 12, borderRadius: 6 },
+  cartaoNome: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
+  cartaoLimite: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },
+  formasContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   formaItem: {
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: BorderRadius.sm,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     minWidth: 80,
     gap: 4,
   },
-  formaItemAtivo: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primaryLight,
-  },
-  formaTexto: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  formaTextoAtivo: {
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  // Parcelas
-  parcelaInfo: {
-    fontSize: FontSize.md,
-    color: Colors.primary,
-    fontWeight: '600',
-    marginTop: Spacing.xs,
-  },
-  // Checkbox
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: Spacing.lg,
-  },
-  checkboxTexto: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-  },
-  // Resumo
+  formaItemAtivo: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  formaTexto: { fontSize: FontSize.xs, color: colors.textSecondary, fontWeight: '500' },
+  formaTextoAtivo: { color: colors.primary, fontWeight: '600' },
+  parcelaInfo: { fontSize: FontSize.md, color: colors.primary, fontWeight: '600', marginTop: Spacing.xs },
+  checkboxContainer: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: Spacing.lg },
+  checkboxTexto: { fontSize: FontSize.md, color: colors.textPrimary },
   resumoContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginTop: Spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
-  resumoTitulo: {
-    fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
+  resumoTitulo: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
   resumoLinha: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
-  resumoLabel: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
-  resumoValor: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  // Botão fixo
+  resumoLabel: { fontSize: FontSize.md, color: colors.textSecondary },
+  resumoValor: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
   botaoContainer: {
     position: 'absolute',
     bottom: 0,
@@ -590,12 +602,12 @@ const styles = StyleSheet.create({
     right: 0,
     padding: Spacing.lg,
     paddingBottom: Spacing.xl,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopColor: colors.borderLight,
   },
   botaoSalvar: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.sm,
     padding: Spacing.md + 2,
     flexDirection: 'row',
@@ -603,12 +615,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  botaoDisabled: {
-    opacity: 0.6,
-  },
-  botaoSalvarTexto: {
-    color: Colors.textWhite,
-    fontSize: FontSize.lg,
-    fontWeight: '700',
-  },
+  botaoDisabled: { opacity: 0.6 },
+  botaoSalvarTexto: { color: colors.textWhite, fontSize: FontSize.lg, fontWeight: '700' },
 });

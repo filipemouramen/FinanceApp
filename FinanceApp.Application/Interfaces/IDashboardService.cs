@@ -1,14 +1,8 @@
-﻿using FinanceApp.Application.DTOs.Dashboard;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FinanceApp.Application.DTOs.Dashboard;
 
-namespace FinanceApp.Application.Interfaces
+namespace FinanceApp.Application.Interfaces;
+
+public interface IDashboardService
 {
-    public interface IDashboardService
-    {
-        Task<Resultado<DashboardResponse>> ObterAsync(Guid usuarioId, int mes, int ano);
-    }
+    Task<Resultado<DashboardResponse>> ObterAsync(int usuarioId, int mes, int ano);
 }

@@ -1,10 +1,14 @@
 using System.Text;
+using System.Threading.RateLimiting;
+using FinanceApp.API.Services;
 using FinanceApp.Application.Interfaces;
 using FinanceApp.Application.Services;
 using FinanceApp.Domain.Entities;
 using FinanceApp.Infrastructure.Data;
+using FinanceApp.Infrastructure.Interceptors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -12,11 +16,13 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // ===== DATABASE =====
-builder.Services.AddDbContext<FinanceDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddSingleton<AuditInterceptor>();
+builder.Services.AddDbContext<FinanceDbContext>((sp, options) =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .AddInterceptors(sp.GetRequiredService<AuditInterceptor>()));
 
 // ===== IDENTITY =====
-builder.Services.AddIdentity<Usuario, IdentityRole<Guid>>(options =>
+builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options =>
 {
     options.Password.RequiredLength = 6;
     options.Password.RequireDigit = true;
@@ -33,7 +39,8 @@ builder.Services.AddIdentity<Usuario, IdentityRole<Guid>>(options =>
 .AddDefaultTokenProviders();
 
 // ===== JWT =====
-var jwtSecret = builder.Configuration["Jwt:Secret"]!;
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("Jwt:Secret nÃ£o configurado.");
 var key = Encoding.UTF8.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
@@ -43,7 +50,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -58,7 +65,31 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// ===== SERVICES (Injeção de Dependência) =====
+// ===== PASSWORD HASHING =====
+builder.Services.Configure<PasswordHasherOptions>(options =>
+{
+    options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3;
+    options.IterationCount = 350_000;
+});
+
+// ===== RATE LIMITING =====
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+// ===== SERVICES =====
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITransacaoService, TransacaoService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
@@ -69,7 +100,11 @@ builder.Services.AddScoped<IMetaService, MetaService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IConfiguracaoService, ConfiguracaoService>();
 builder.Services.AddScoped<INotificacaoService, NotificacaoService>();
-//builder.Services.AddScoped<WhatsAppService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ITransferenciaService, TransferenciaService>();
+builder.Services.AddScoped<IExportacaoService, ExportacaoService>();
+builder.Services.AddHostedService<LogAuditoriaPurgeService>();
 
 // ===== CORS =====
 builder.Services.AddCors(options =>
@@ -99,8 +134,8 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Finance App API",
-        Version = "v1",
-        Description = "API do aplicativo de finanças pessoais"
+        Version = "v2",
+        Description = "API do aplicativo de financas pessoais"
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -110,7 +145,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Insira o token JWT. Exemplo: eyJhbGciOi..."
+        Description = "Insira o token JWT."
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -138,15 +173,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Finance App API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Finance App API v2");
         options.RoutePrefix = "swagger";
     });
 }
 
 if (!app.Environment.IsDevelopment())
 {
+    app.UseHsts();
     app.UseHttpsRedirection();
 }
+
+app.UseRateLimiter();
 app.UseCors("PermitirApp");
 app.UseAuthentication();
 app.UseAuthorization();
